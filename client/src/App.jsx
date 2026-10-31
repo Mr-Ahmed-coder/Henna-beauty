@@ -7,6 +7,7 @@ import Contact from "./pages/Contact";
 import QueuePage from "./queue/QueuePage";
 import Admin from "./admin/Admin";
 import BookingPage from "./booking/BookingPage";
+import TrackVisit from "./pages/TrackVisit";
 export default function App() {
   return (
     <Routes>
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="contact" element={<Contact />} />
         <Route path="appointments/*" element={<BookingPage />} />
         <Route path="queue/*" element={<QueuePage />} />
+        <Route path="track" element={<TrackVisit />} />
         <Route
           path="*"
           element={

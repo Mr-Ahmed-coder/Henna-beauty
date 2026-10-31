@@ -71,7 +71,13 @@ export default function Layout() {
               className="button nav-appointment"
               onClick={() => setOpen(false)}
             >
-              Appointments <ArrowUpRight size={16} />
+              Book appointment <ArrowUpRight size={16} />
+            </Link>
+            <Link to="/queue" onClick={() => setOpen(false)}>
+              Join queue
+            </Link>
+            <Link to="/track" onClick={() => setOpen(false)}>
+              Track my visit
             </Link>
           </nav>
         </div>
@@ -98,6 +104,7 @@ export default function Layout() {
             <h3>Plan your visit</h3>
             <Link to="/appointments">Appointments</Link>
             <Link to="/queue">Today’s queue</Link>
+            <Link to="/track">Track my visit</Link>
             <p>Hours & location to be confirmed.</p>
           </div>
         </div>

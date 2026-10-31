@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
-import { Staff, Service } from "../models/index.js";
+import { DateTime } from "luxon";
+import { Staff, Service, Schedule, Settings } from "../models/index.js";
 import {
   ArtistProfile,
   Appointment,
@@ -45,7 +46,7 @@ export function bookingRouter({ origins }) {
   router.get("/catalog", async (_req, res) => {
     const { settings, policy } = await configuration();
     const services = await Service.find({ active: true }).select(
-      "name description priceMinor durationMinutes",
+      "name category description imageUrl priceMinor durationMinutes",
     );
     const artists = await Staff.find({ active: true, role: "Artist" }).select(
       "name",
@@ -53,15 +54,43 @@ export function bookingRouter({ origins }) {
     const profiles = await ArtistProfile.find({
       staff: { $in: artists.map((a) => a._id) },
     });
+    const scheduled = await Schedule.find({
+      staff: { $in: artists.map((a) => a._id) },
+      available: true,
+      day: { $in: settings.hours.filter((hour) => !hour.closed).map((hour) => hour.day) },
+    }).select("staff day start end");
+    const artistDetails = artists.map((artist) => ({
+      id: String(artist._id),
+      name: artist.name,
+      services:
+        profiles.find((profile) => String(profile.staff) === String(artist._id))
+          ?.services || [],
+      scheduled: scheduled.some(
+        (shift) =>
+          String(shift.staff) === String(artist._id) &&
+          settings.hours.some(
+            (hour) =>
+              !hour.closed &&
+              hour.day === shift.day &&
+              shift.start < hour.close &&
+              shift.end > hour.open,
+          ),
+      ),
+    }));
     res.json({
-      services,
-      artists: artists.map((a) => ({
-        id: String(a._id),
-        name: a.name,
-        services:
-          profiles.find((p) => String(p.staff) === String(a._id))?.services ||
-          [],
-      })),
+      services: services.map((service) => {
+        const qualified = artistDetails.filter((artist) =>
+          artist.services.map(String).includes(String(service._id)),
+        );
+        return {
+          ...service.toObject(),
+          qualifiedArtistCount: qualified.length,
+          scheduledArtistCount: qualified.filter((artist) => artist.scheduled)
+            .length,
+          bookable: qualified.some((artist) => artist.scheduled),
+        };
+      }),
+      artists: artistDetails,
       timezone: settings.timezone,
       currency: settings.currency,
       policy,
@@ -166,6 +195,20 @@ export function appointmentAdminRouter() {
       const { statuses } = await import("../models/booking.js");
       if (!statuses.includes(req.query.status)) fail(400, "Unknown status");
       query.status = req.query.status;
+    }
+    if (req.query.today !== undefined) {
+      if (req.query.today !== "1") fail(400, "Invalid appointment filter");
+      const settings = await Settings.findById("salon");
+      if (!settings) query._id = { $exists: false };
+      else {
+        const start = DateTime.now()
+          .setZone(settings.timezone)
+          .startOf("day");
+        query.start = {
+          $gte: start.toUTC().toJSDate(),
+          $lt: start.plus({ days: 1 }).toUTC().toJSDate(),
+        };
+      }
     }
     const page = Math.max(1, Math.min(10000, Number(req.query.page) || 1));
     if (!Number.isInteger(page)) fail(400, "Invalid page");

@@ -245,9 +245,25 @@ export async function getQueueSnapshot({
     return { ...common, ticket: decorate(own, forecast, context) };
   }
   const services = await Service.find({ active: true }).select(
-    "name description durationMinutes priceMinor",
+    "name category description imageUrl durationMinutes priceMinor",
   );
-  return { ...common, currency: context.settings.currency, services };
+  const annotated = await Promise.all(
+    services.map(async (service) => {
+      try {
+        const slots = await candidates(
+          { service: service._id, durationMinutes: service.durationMinutes },
+          context,
+          null,
+          { forecast: true },
+        );
+        return { ...service.toObject(), bookable: slots.length > 0 };
+      } catch (err) {
+        if (err.status === 404) return { ...service.toObject(), bookable: false };
+        throw err;
+      }
+    }),
+  );
+  return { ...common, currency: context.settings.currency, services: annotated };
 }
 export async function joinQueue(
   body,

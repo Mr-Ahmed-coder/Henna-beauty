@@ -161,7 +161,7 @@ Appointments use MongoDB transactions. Atlas supports these, and local developme
 
 ### Prepare real availability
 
-1. In `/admin`, create active services with prices and durations, configure business hours, currency, and the salon's IANA timezone, and create active Artist accounts with weekly shifts.
+1. In `/admin`, create active services with a category, optional description/image URL, price, and duration; configure business hours, currency, and the salon's IANA timezone; then create active Artist accounts with weekly shifts.
 2. Open **Appointments → Booking configuration**. Assign the services each Artist is qualified to provide. Artists without qualifications or available shifts produce no slots. Add recurring weekday breaks using salon-local times. Changes to profiles do not alter staff login roles or credentials.
 3. Review booking rules. Defaults: immediate confirmation, 60-minute minimum notice, 90-day booking horizon, 15-minute slot spacing, and customer cancellation/rescheduling enabled with 24 hours' notice. Admins can change these values or require approval. Pending requests occupy their reserved time until confirmed or cancelled; they do not expire automatically.
 4. Customers can open `/appointments`, select a live service, a preferred Artist or any qualified available Artist, a date and time, enter name/phone/optional notes, review, and confirm. The selected Artist is shown in the final confirmation. Prices are snapshots in the configured currency's smallest units; no payment is processed.
@@ -201,7 +201,7 @@ Artists can only advance their own appointment to Checked In, In Service, Comple
 | `POST /api/booking/reservations`                                            | Reserve with `service`, optional `artist`, UTC `start`, `customerName`, `phone`, optional `notes`   |
 | `GET /api/booking/reservations/:reference`                                  | Private details; requires `X-Booking-Token`                                                         |
 | `PATCH /api/booking/reservations/:reference`                                | Customer `action: status, status: Cancelled` or `action: reschedule, start, artist`; requires token |
-| `GET/POST /api/admin/appointments`                                          | Protected staff list/search/filter/pagination or manual creation                                    |
+| `GET/POST /api/admin/appointments`                                          | Protected staff list/search/filter/pagination or manual creation; `?today=1` limits the list to the salon’s current day |
 | `PATCH /api/admin/appointments/:reference`                                  | Protected status, reschedule, and reassignment operations                                           |
 | `GET/PUT /api/admin/booking-policy`                                         | Rules; writes require Admin                                                                         |
 | `GET /api/admin/artist-profiles`, `PUT /api/admin/artist-profiles/:staffId` | Qualifications and recurring breaks; writes require Admin                                           |
@@ -300,3 +300,13 @@ Source: `server/src/models/queue.js`, `server/src/queue/engine.js`, `server/src/
 Browser checks at 1440 × 900 and 390 × 844 verified online join, walk-in registration, two simultaneous Artist assignments, physical check-in, service start/completion, saving queue rules, private-ticket refresh, and automatic status synchronization between two independently loaded ticket views. Responsive pages fit without horizontal overflow. Preview data and credentials are disposable and are not seeded into the salon database. No SMS, WhatsApp, push notifications, payment processing, remote, deployment, or Phase 5 functionality was added.
 
 Database references: [MongoDB partial unique indexes](https://www.mongodb.com/docs/manual/core/index-unique/) and [transaction/write-conflict behavior](https://www.mongodb.com/docs/v8.3/core/transactions-production-consideration/).
+
+## Task 04D: service catalogue and daily workflow
+
+The public Home and Services pages use the live database catalogue rather than the original illustrative cards. Administrators manage each service in **Manage salon → Services**, including category, optional description, optional `http`/`https` image URL, price in the existing smallest-currency-unit format, duration, and active status. Deactivating a service removes it from new booking and queue menus without altering saved appointments or tickets.
+
+The customer menu shows actual configured prices/durations and routes an eligible service into booking. Active but unbookable services remain visible with a specific setup explanation: either no active Artist has the qualification, or no qualified Artist has a recurring shift overlapping salon hours. Queue choices additionally reflect live queue eligibility; no customer-facing availability is fabricated.
+
+The three public entry points are **Book appointment**, **Join queue**, and **Track my visit**. Tracking accepts only a complete private appointment or ticket link and preserves the existing token-based privacy model.
+
+`/admin` now opens on **Operations**, with today’s appointments, the live waiting queue, Artists with a shift today, configuration guidance, and direct actions to appointments, queue, services, staff, and schedules. The menu groups daily operations separately from salon management. Appointment and queue assignment decisions continue to be made by the existing scheduling engine at action time, including conflicts, breaks, and protected reservations.

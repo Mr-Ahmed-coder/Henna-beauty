@@ -222,6 +222,11 @@ test("hybrid queue integration on a real isolated replica set", async (t) => {
       const catalog = await api("/api/queue/catalog");
       assert.equal(catalog.data.tickets, undefined);
       assert.ok(!JSON.stringify(catalog.data).includes("123456"));
+      assert.equal(
+        catalog.data.services.find((service) => service._id === String(short._id))
+          .bookable,
+        true,
+      );
       const cancelled = await api(
         "/api/queue/tickets/" + online.data.ticket.reference,
         {

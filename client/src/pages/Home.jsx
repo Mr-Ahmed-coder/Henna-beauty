@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowUpRight, Flower2, Sparkles, Heart } from "lucide-react";
-import { services } from "../data/services";
-import { ServiceCard, VisitCTA } from "../components/Shared";
+import { VisitCTA } from "../components/Shared";
+import ServiceCatalogue from "../catalogue/ServiceCatalogue";
 export default function Home() {
   return (
     <>
@@ -20,11 +20,11 @@ export default function Home() {
             henna traditions meet everyday beauty.
           </p>
           <div className="actions">
-            <Link className="button" to="/services">
-              Explore our services <ArrowUpRight size={18} />
+            <Link className="button" to="/appointments">
+              Book appointment <ArrowUpRight size={18} />
             </Link>
-            <Link className="text-link" to="/about">
-              Get to know us <ArrowUpRight size={17} />
+            <Link className="text-link" to="/queue">
+              Join today’s queue <ArrowUpRight size={17} />
             </Link>
           </div>
           <div className="hero-footnote">
@@ -82,14 +82,9 @@ export default function Home() {
           </Link>
         </div>
         <p className="section-note">
-          A preview of our proposed services. Final offerings and pricing will
-          be confirmed.
+          Live services are shown directly from the salon’s catalogue.
         </p>
-        <div className="service-grid">
-          {services.map((service) => (
-            <ServiceCard key={service.number} service={service} />
-          ))}
-        </div>
+        <ServiceCatalogue limit={3} />
       </section>
       <section className="story-section container">
         <div className="story-art" aria-hidden="true">

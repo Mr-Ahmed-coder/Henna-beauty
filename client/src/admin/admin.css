@@ -65,7 +65,8 @@
   font-size: 13px;
 }
 .admin-form input,
-.admin-form select {
+.admin-form select,
+.admin-form textarea {
   background: #fffdfa;
   border: 1px solid #bca897;
   color: #482735;
@@ -75,6 +76,10 @@
   font: inherit;
   min-height: 44px;
   border-radius: 2px;
+}
+.admin-form textarea {
+  resize: vertical;
+  min-height: 90px;
 }
 .admin-form input[type="checkbox"] {
   width: 22px;
@@ -89,6 +94,18 @@
   gap: 10px;
   flex-wrap: wrap;
   margin: 30px 0;
+  align-items: center;
+}
+.admin-tab-label {
+  color: #8b6a56;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-left: 8px;
+}
+.admin-tab-label:first-child {
+  margin-left: 0;
 }
 .admin-tabs button {
   text-transform: capitalize;
@@ -158,6 +175,78 @@
 .admin-role {
   color: #775366;
 }
+.operations-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 24px 0;
+}
+.operations-summary article,
+.operations-panel,
+.admin-guidance {
+  border: 1px solid #ddcfc2;
+  background: #fffaf3;
+  padding: 20px;
+}
+.operations-summary article {
+  display: grid;
+  gap: 7px;
+}
+.operations-summary span {
+  color: #775366;
+  font-size: 12px;
+}
+.operations-summary strong {
+  font-family: "Playfair Display", serif;
+  font-size: 38px;
+  font-weight: 400;
+  line-height: 1;
+}
+.operations-summary button,
+.operations-panel button {
+  justify-self: start;
+  border: 0;
+  background: transparent;
+  border-bottom: 1px solid #cdb8a5;
+  color: #482735;
+  min-height: 32px;
+  padding: 0;
+  font-size: 12px;
+}
+.operations-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.operations-panel h3,
+.admin-guidance h3 {
+  font-size: 23px;
+}
+.operations-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid #eadfd3;
+  padding: 13px 0;
+  color: #715f61;
+  font-size: 12px;
+}
+.operations-row span {
+  display: grid;
+  gap: 2px;
+}
+.operations-row span:last-child {
+  text-align: right;
+}
+.operations-row strong {
+  color: #482735;
+  font-weight: 600;
+}
+.admin-guidance {
+  margin-top: 20px;
+  border-left: 3px solid #a9814c;
+  background: #f5e9df;
+}
 @media (max-width: 650px) {
   .admin-records article {
     align-items: stretch;
@@ -185,5 +274,20 @@
   .admin-tabs button {
     flex: 1;
     padding-inline: 10px !important;
+  }
+  .admin-tab-label {
+    flex-basis: 100%;
+    margin: 8px 0 0;
+  }
+  .operations-summary,
+  .operations-grid {
+    grid-template-columns: 1fr;
+  }
+  .operations-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .operations-row span:last-child {
+    text-align: left;
   }
 }

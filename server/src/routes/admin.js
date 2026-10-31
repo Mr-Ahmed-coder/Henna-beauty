@@ -228,7 +228,9 @@ export function adminRouter({
         await Service.create(
           fields(req.body, [
             "name",
+            "category",
             "description",
+            "imageUrl",
             "priceMinor",
             "durationMinutes",
             "active",
@@ -242,7 +244,9 @@ export function adminRouter({
     doc.set(
       fields(req.body, [
         "name",
+        "category",
         "description",
+        "imageUrl",
         "priceMinor",
         "durationMinutes",
         "active",

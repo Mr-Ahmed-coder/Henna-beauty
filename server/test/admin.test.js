@@ -176,21 +176,55 @@ test("staff authentication, RBAC, CRUD, persistence and session security", async
   const service = await call(
     "/services",
     "POST",
-    { name: "Henna", priceMinor: 25000, durationMinutes: 60 },
+    {
+      name: "Henna",
+      category: "Henna artistry",
+      description: "Test catalogue description",
+      imageUrl: "https://images.example.test/henna.jpg",
+      priceMinor: 25000,
+      durationMinutes: 60,
+    },
     admin,
   );
   assert.equal(service.status, 201);
+  assert.equal(service.data.category, "Henna artistry");
+  assert.equal(service.data.imageUrl, "https://images.example.test/henna.jpg");
+  assert.equal(
+    (
+      await call(
+        "/services",
+        "POST",
+        {
+          name: "Bad image",
+          imageUrl: "javascript:alert(1)",
+          priceMinor: 25000,
+          durationMinutes: 60,
+        },
+        admin,
+      )
+    ).status,
+    400,
+  );
   assert.equal(
     (
       await call(
         "/services/" + service.data._id,
         "PATCH",
-        { priceMinor: 30000 },
+        {
+          priceMinor: 30000,
+          category: "Bridal henna",
+          imageUrl: "",
+          active: false,
+        },
         admin,
       )
-    ).data.priceMinor,
-    30000,
+    ).data.active,
+    false,
   );
+  const editedService = await call("/services", "GET", null, admin);
+  assert.equal(editedService.data[0].priceMinor, 30000);
+  assert.equal(editedService.data[0].category, "Bridal henna");
+  assert.equal(editedService.data[0].imageUrl, "");
   const hours = Array.from({ length: 7 }, (_, day) => ({
     day,
     closed: day === 0,

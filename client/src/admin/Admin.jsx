@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import "./admin.css";
 import AppointmentAdmin from "./AppointmentAdmin";
 import QueueAdmin from "./QueueAdmin";
+import OperationsDashboard from "./OperationsDashboard";
 const days = [
   "Sunday",
   "Monday",
@@ -16,7 +17,9 @@ const defaults = {
   staff: { name: "", email: "", password: "", role: "Artist", active: true },
   services: {
     name: "",
+    category: "General",
     description: "",
+    imageUrl: "",
     priceMinor: 0,
     durationMinutes: 30,
     active: true,
@@ -43,7 +46,9 @@ const definitions = {
   ],
   services: [
     ["name", "Service name", "text"],
-    ["description", "Description", "text"],
+    ["category", "Category", "text"],
+    ["description", "Description (optional)", "textarea"],
+    ["imageUrl", "Image URL (optional; https://)", "url"],
     ["priceMinor", "Price in smallest currency units", "number"],
     ["durationMinutes", "Duration (minutes)", "number"],
     ["active", "Active", "checkbox"],
@@ -61,7 +66,7 @@ export default function Admin() {
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [message, setMessage] = useState(""),
-    [pane, setPane] = useState("services"),
+    [pane, setPane] = useState("dashboard"),
     [rows, setRows] = useState([]),
     [staff, setStaff] = useState([]),
     [form, setForm] = useState(null),
@@ -198,6 +203,12 @@ export default function Admin() {
     });
   }
   const canEdit = session?.staff.role === "Admin";
+  const formatMoney = (value) => {
+    const currency = settings?.currency || "UGX";
+    const formatter = new Intl.NumberFormat("en", { style: "currency", currency });
+    const digits = formatter.resolvedOptions().maximumFractionDigits;
+    return formatter.format(value / 10 ** digits);
+  };
   return (
     <div className="admin-shell">
       <header className="admin-header">
@@ -285,14 +296,18 @@ export default function Admin() {
                   : "Read-only access to staff, services, hours, and schedules."}
             </p>
             <nav className="admin-tabs" aria-label="Administration">
-              {[
-                "staff",
-                "services",
-                "hours",
-                "schedules",
-                "appointments",
-                "queue",
-              ].map((item) => (
+              <span className="admin-tab-label">Today</span>
+              {["dashboard", "appointments", "queue"].map((item) => (
+                <button
+                  key={item}
+                  aria-current={pane === item ? "page" : undefined}
+                  onClick={() => changePane(item)}
+                >
+                  {item === "dashboard" ? "Operations" : item}
+                </button>
+              ))}
+              <span className="admin-tab-label">Manage salon</span>
+              {["services", "staff", "schedules", "hours"].map((item) => (
                 <button
                   key={item}
                   aria-current={pane === item ? "page" : undefined}
@@ -300,11 +315,15 @@ export default function Admin() {
                 >
                   {item === "staff" && session.staff.role === "Artist"
                     ? "My account"
-                    : item}
+                    : item === "hours"
+                      ? "Settings & hours"
+                      : item}
                 </button>
               ))}
             </nav>
-            {pane === "queue" ? (
+            {pane === "dashboard" ? (
+              <OperationsDashboard session={session} onOpen={changePane} />
+            ) : pane === "queue" ? (
               <QueueAdmin session={session} />
             ) : pane === "appointments" ? (
               <AppointmentAdmin session={session} />
@@ -417,7 +436,7 @@ export default function Admin() {
                       ? "Weekly availability"
                       : pane === "staff"
                         ? "Staff accounts"
-                        : "Services & prices"}
+                        : "Service catalogue"}
                   </h2>
                   {canEdit && (
                     <button
@@ -438,9 +457,11 @@ export default function Admin() {
                 </div>
                 {pane === "services" && (
                   <p>
-                    Prices use the smallest currency unit. Currency:{" "}
-                    {settings?.currency || "not configured"}. For UGX, 10000
-                    means UGX 10,000; for USD, 10000 means USD 100.
+                    Active services appear on the public menu. To make a service
+                    bookable, assign it to an active Artist in Booking
+                    configuration and save that Artist’s recurring shift.
+                    Prices are stored in the smallest currency unit: for UGX,
+                    10000 means UGX 10,000; for USD, 10000 means USD 100.
                   </p>
                 )}
                 {pane === "schedules" && (
@@ -496,11 +517,21 @@ export default function Admin() {
                               </>
                             )}
                           </select>
+                        ) : type === "textarea" ? (
+                          <textarea
+                            rows={3}
+                            maxLength={1000}
+                            value={form[key]}
+                            onChange={(e) =>
+                              setForm({ ...form, [key]: e.target.value })
+                            }
+                          />
                         ) : (
                           <input
                             type={type}
                             required={
                               type !== "checkbox" &&
+                              !["password", "description", "imageUrl"].includes(key) &&
                               (key !== "password" || !editing)
                             }
                             min={key === "durationMinutes" ? 5 : 0}
@@ -517,6 +548,10 @@ export default function Admin() {
                                 ? 128
                                 : key === "description"
                                   ? 1000
+                                  : key === "imageUrl"
+                                    ? 2048
+                                    : key === "category"
+                                      ? 80
                                   : 254
                             }
                             autoComplete={
@@ -577,9 +612,12 @@ export default function Admin() {
                                 " · " +
                                 (row.active ? "Active" : "Inactive")
                               : pane === "services"
-                                ? `${row.priceMinor} ${settings?.currency || "(currency pending)"} smallest units · ${row.durationMinutes} min · ${row.active ? "Active" : "Inactive"}`
+                                ? `${row.category || "General"} · ${formatMoney(row.priceMinor)} · ${row.durationMinutes} min · ${row.active ? "Active" : "Inactive"}${row.imageUrl ? " · Image linked" : ""}`
                                 : `${row.start}–${row.end} · ${row.available ? "Available" : "Unavailable"}`}
                           </p>
+                          {pane === "services" && row.description && (
+                            <p>{row.description}</p>
+                          )}
                           {row.bootstrap && (
                             <small>Protected initial administrator</small>
                           )}

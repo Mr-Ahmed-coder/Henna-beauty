@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
 import { bookingApi, money, formatTime } from "./api";
 import "./booking.css";
-export default function BookingForm({ onBooked, session, reservation, token }) {
+export default function BookingForm({
+  onBooked,
+  session,
+  reservation,
+  token,
+  initialService = "",
+}) {
   const [catalog, setCatalog] = useState(null),
-    [service, setService] = useState(reservation?.service || ""),
+    [service, setService] = useState(reservation?.service || initialService),
     [artist, setArtist] = useState(""),
     [date, setDate] = useState(""),
     [slots, setSlots] = useState([]),
@@ -195,15 +201,33 @@ export default function BookingForm({ onBooked, session, reservation, token }) {
                 >
                   <option value="">Select a service</option>
                   {catalog.services.map((s) => (
-                    <option key={s._id} value={s._id}>
+                    <option key={s._id} value={s._id} disabled={!s.bookable}>
                       {s.name} · {s.durationMinutes} min ·{" "}
                       {money(s.priceMinor, catalog.currency)}
+                      {!s.bookable ? " · Setup needed" : ""}
                     </option>
                   ))}
                 </select>
               </label>
               {!catalog.services.length && (
                 <p>No active services are available for booking yet.</p>
+              )}
+              {selected && !selected.bookable && (
+                <p className="booking-note" role="status">
+                  {!selected.qualifiedArtistCount
+                    ? "This service needs an active Artist with this qualification before it can be booked online."
+                    : "This service needs a qualified Artist with a recurring shift during salon hours before it can be booked online."}
+                </p>
+              )}
+              {selected && (
+                <div className="booking-service-summary">
+                  <p className="eyebrow">{selected.category || "General"}</p>
+                  {selected.description && <p>{selected.description}</p>}
+                  <p>
+                    {selected.durationMinutes} minutes ·{" "}
+                    {money(selected.priceMinor, catalog.currency)}
+                  </p>
+                </div>
               )}
               <label>
                 2. Preferred artist

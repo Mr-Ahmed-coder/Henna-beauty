@@ -40,6 +40,15 @@
   margin-block: 15px !important;
   line-height: 1.8;
 }
+.booking-service-summary {
+  padding: 15px 17px;
+  border-left: 2px solid #a9814c;
+  background: #f5eadf;
+}
+.booking-service-summary p:not(.eyebrow) {
+  font-size: 12px;
+  margin-top: 5px;
+}
 .booking-error {
   padding: 16px 20px;
   margin: 16px 0;

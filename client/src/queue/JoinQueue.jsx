@@ -31,7 +31,8 @@ export default function JoinQueue({ session, onJoined }) {
     }
   }
   const accepting =
-    data?.acceptingEntries && (session || data.policy.remoteEnabled);
+    data?.acceptingEntries && (session || data.policy.remoteEnabled),
+    selectedService = data?.services.find((item) => item._id === service);
   return (
     <div className="booking-ui queue-ui">
       {(error || loadError) && (
@@ -77,14 +78,28 @@ export default function JoinQueue({ session, onJoined }) {
               >
                 <option value="">Choose a service</option>
                 {data.services.map((s) => (
-                  <option key={s._id} value={s._id}>
+                  <option key={s._id} value={s._id} disabled={!s.bookable}>
                     {s.name} · {s.durationMinutes} min ·{" "}
                     {money(s.priceMinor, data.currency)}
+                    {!s.bookable ? " · Unavailable now" : ""}
                   </option>
                 ))}
               </select>
             </label>
             {!data.services.length && <p>No active services are available.</p>}
+            {selectedService && !selectedService.bookable && (
+                <p className="booking-note" role="status">
+                  This service has no qualified artist available in today’s queue schedule. Choose another service or ask reception.
+                </p>
+              )}
+            {selectedService && (
+              <div className="booking-service-summary">
+                <p className="eyebrow">
+                  {selectedService.category || "General"}
+                </p>
+                {selectedService.description && <p>{selectedService.description}</p>}
+              </div>
+            )}
             <label>
               Customer name
               <input

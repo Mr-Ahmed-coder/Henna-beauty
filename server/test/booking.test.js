@@ -72,7 +72,14 @@ test("appointment booking integration", async (t) => {
     },
   ]);
   const [short, long, inactive] = await Service.create([
-    { name: "Henna", priceMinor: 30000, durationMinutes: 30 },
+    {
+      name: "Henna",
+      category: "Henna artistry",
+      description: "Test catalogue description",
+      imageUrl: "https://images.example.test/henna.jpg",
+      priceMinor: 30000,
+      durationMinutes: 30,
+    },
     { name: "Bridal", priceMinor: 90000, durationMinutes: 90 },
     { name: "Hidden", priceMinor: 1, durationMinutes: 15, active: false },
   ]);
@@ -152,6 +159,15 @@ test("appointment booking integration", async (t) => {
       const catalog = await api("/api/booking/catalog");
       assert.equal(catalog.status, 200);
       assert.equal(catalog.data.services.length, 2);
+      const henna = catalog.data.services.find(
+        (service) => service._id === String(short._id),
+      );
+      assert.equal(henna.category, "Henna artistry");
+      assert.equal(henna.description, "Test catalogue description");
+      assert.equal(henna.imageUrl, "https://images.example.test/henna.jpg");
+      assert.equal(henna.qualifiedArtistCount, 2);
+      assert.equal(henna.scheduledArtistCount, 2);
+      assert.equal(henna.bookable, true);
       assert.equal(
         catalog.data.services.some((s) => s._id === String(inactive._id)),
         false,
@@ -253,8 +269,19 @@ test("appointment booking integration", async (t) => {
         ).slots.length,
         0,
       );
-      await Schedule.updateOne(
-        { staff: one._id, day: weekday },
+      await Schedule.updateMany(
+        { staff: one._id },
+        { $set: { available: false } },
+      );
+      const unavailableCatalog = await api("/api/booking/catalog");
+      assert.equal(
+        unavailableCatalog.data.services.find(
+          (service) => service._id === String(long._id),
+        ).bookable,
+        false,
+      );
+      await Schedule.updateMany(
+        { staff: one._id },
         { $set: { available: true } },
       );
       await Staff.updateOne({ _id: one._id }, { $set: { active: false } });
@@ -444,6 +471,16 @@ test("appointment booking integration", async (t) => {
     "staff authorization, search, approval and defined status transitions",
     async () => {
       assert.equal((await api("/api/admin/appointments")).status, 401);
+      assert.equal(
+        (await api("/api/admin/appointments?today=1", { auth: deskAuth }))
+          .status,
+        200,
+      );
+      assert.equal(
+        (await api("/api/admin/appointments?today=no", { auth: deskAuth }))
+          .status,
+        400,
+      );
       assert.equal(
         (
           await api("/api/admin/appointments", {

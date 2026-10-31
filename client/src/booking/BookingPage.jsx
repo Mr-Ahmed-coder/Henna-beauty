@@ -16,6 +16,7 @@ export default function BookingPage() {
   const params = new URLSearchParams(location.hash.slice(1)),
     reference = params.get("reference"),
     token = params.get("token"),
+    initialService = new URLSearchParams(location.search).get("service") || "",
     manage = location.pathname.endsWith("/manage");
   useEffect(() => {
     if (!manage || !reference || !token) return;
@@ -230,7 +231,7 @@ export default function BookingPage() {
             </p>
           )
         ) : (
-          <BookingForm onBooked={booked} />
+          <BookingForm initialService={initialService} onBooked={booked} />
         )}
       </section>
     </>

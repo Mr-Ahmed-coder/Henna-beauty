@@ -35,7 +35,18 @@ export const Service = mongoose.model(
   new Schema(
     {
       name: text(),
+      category: { type: String, trim: true, maxlength: 80, default: "General" },
       description: { type: String, trim: true, maxlength: 1000, default: "" },
+      imageUrl: {
+        type: String,
+        trim: true,
+        maxlength: 2048,
+        default: "",
+        validate: {
+          validator: (value) => !value || /^https?:\/\//i.test(value),
+          message: "Image URL must use http or https",
+        },
+      },
       priceMinor: {
         type: Number,
         required: true,
