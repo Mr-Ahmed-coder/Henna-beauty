@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import { fileURLToPath } from "node:url";
 import mongoose from "mongoose";
 import { connectDatabase } from "./config/database.js";
-import { Staff, initializeModels } from "./models/index.js";
+import { Staff, Session, initializeModels } from "./models/index.js";
 import { hashPassword } from "./security.js";
 dotenv.config({
   path: fileURLToPath(new URL("../.env", import.meta.url)),
@@ -21,6 +21,22 @@ export async function bootstrapAdmin({ name, email, password }) {
     active: true,
     bootstrap: true,
   });
+}
+export async function resetBootstrapAdmin({ name, email, password }) {
+  const administrator = await Staff.findOne({ bootstrap: true }).select(
+    "+passwordHash",
+  );
+  if (!administrator) throw new Error("Initial administrator does not exist");
+  administrator.set({
+    name,
+    email,
+    passwordHash: await hashPassword(password),
+    role: "Admin",
+    active: true,
+  });
+  await administrator.save();
+  await Session.deleteMany({ staff: administrator._id });
+  return administrator;
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {

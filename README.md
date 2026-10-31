@@ -102,7 +102,23 @@ try {
 }
 ```
 
-The command rejects repeat setup and uses a fixed unique database ID to prevent competing first-run creation. The initial administrator cannot be deleted, disabled, or demoted through the API. Admins can change its name, email, and password. There is no password-recovery endpoint; retain administrator credentials securely. Staff password or account changes invalidate that staff member's sessions. Editing your own account requires a fresh login.
+The command rejects repeat setup and uses a fixed unique database ID to prevent competing first-run creation. The initial administrator cannot be deleted, disabled, or demoted through the API. Admins can change its name, email, and password. Staff password or account changes invalidate that staff member's sessions. Editing your own account requires a fresh login.
+
+If the initial local administrator already exists but its password was never safely handed over, an owner with local filesystem/database access can choose a new name, email, and password with this confirmation-gated recovery command. It is not an HTTP endpoint, does not print the password, and invalidates existing administrator sessions:
+
+```powershell
+$env:ADMIN_NAME = Read-Host 'Administrator name'
+$env:ADMIN_EMAIL = Read-Host 'Administrator email'
+$adminSecret = Read-Host 'New password (12–128 characters)' -AsSecureString
+try {
+  $env:ADMIN_PASSWORD = [System.Net.NetworkCredential]::new('', $adminSecret).Password
+  $env:ADMIN_RESET_CONFIRM = 'RESET-INITIAL-ADMIN'
+  npm run reset-bootstrap -w server
+} finally {
+  Remove-Item Env:ADMIN_PASSWORD,Env:ADMIN_NAME,Env:ADMIN_EMAIL,Env:ADMIN_RESET_CONFIRM -ErrorAction SilentlyContinue
+  $adminSecret.Dispose()
+}
+```
 
 ### Permissions
 
