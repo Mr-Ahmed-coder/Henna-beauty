@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import { adminRouter } from "./routes/admin.js";
 export function createApp({
   origins = ["http://localhost:5173", "http://127.0.0.1:5173"],
   databaseStatus = () => "not-configured",
@@ -8,7 +9,7 @@ export function createApp({
   const app = express();
   app.disable("x-powered-by");
   app.use(helmet());
-  app.use(cors({ origin: origins }));
+  app.use(cors({ origin: origins, credentials: true }));
   app.use(express.json({ limit: "10kb" }));
   app.get("/api/health", (_req, res) =>
     res.json({
@@ -17,12 +18,32 @@ export function createApp({
       database: databaseStatus(),
     }),
   );
+  app.use("/api/admin", adminRouter({ origins }));
   app.use((_req, res) => res.status(404).json({ error: "Endpoint not found" }));
   app.use((err, _req, res, _next) =>
     res
-      .status(err.status === 400 ? 400 : 500)
+      .status(
+        err.code === 11000
+          ? 409
+          : err.name === "ValidationError" ||
+              err.name === "StrictModeError" ||
+              err.name === "CastError"
+            ? 400
+            : err.status >= 400 && err.status < 600
+              ? err.status
+              : 500,
+      )
       .json({
-        error: err.status === 400 ? "Invalid request" : "Internal server error",
+        error:
+          err.code === 11000
+            ? "An account or schedule with these details already exists"
+            : err.name === "ValidationError" ||
+                err.name === "StrictModeError" ||
+                err.name === "CastError"
+              ? "Invalid data. Check required fields, formats and ranges."
+              : (err.status >= 400 && err.status < 500) || err.status === 503
+                ? err.message
+                : "Internal server error",
       }),
   );
   return app;

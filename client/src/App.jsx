@@ -5,9 +5,11 @@ import Services from "./pages/Services";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import ComingSoon from "./pages/ComingSoon";
+import Admin from "./admin/Admin";
 export default function App() {
   return (
     <Routes>
+      <Route path="/admin/*" element={<Admin />} />
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="services" element={<Services />} />
