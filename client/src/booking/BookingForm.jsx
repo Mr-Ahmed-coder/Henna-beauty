@@ -19,6 +19,7 @@ export default function BookingForm({
       phone: "",
       notes: "",
     }),
+    [inAppUpdates, setInAppUpdates] = useState(true),
     [error, setError] = useState(""),
     [loading, setLoading] = useState(true),
     [busy, setBusy] = useState(false),
@@ -93,7 +94,17 @@ export default function BookingForm({
           {
             method: "POST",
             session,
-            body: { service, artist, start, ...customer },
+            body: {
+              service,
+              artist,
+              start,
+              ...customer,
+              notificationPreferences: {
+                inApp: inAppUpdates,
+                sms: false,
+                whatsapp: false,
+              },
+            },
           },
         );
       onBooked(result);
@@ -160,6 +171,11 @@ export default function BookingForm({
                 )}
               </dl>
               <p>No payment is collected on this website.</p>
+              {!reservation && (
+                <p className="booking-note">
+                  Private in-app updates are {inAppUpdates ? "enabled" : "paused"}.
+                </p>
+              )}
               <div className="booking-actions">
                 <button className="button" disabled={busy} onClick={submit}>
                   {busy
@@ -334,6 +350,14 @@ export default function BookingForm({
                     to manage this reservation. Please avoid sensitive
                     information in notes.
                   </p>
+                  <label className="notification-toggle">
+                    <input
+                      type="checkbox"
+                      checked={inAppUpdates}
+                      onChange={(event) => setInAppUpdates(event.target.checked)}
+                    />
+                    Keep secure in-app appointment updates in my private link
+                  </label>
                 </>
               )}
               <p className="booking-note">

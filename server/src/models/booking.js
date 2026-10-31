@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { notificationPreferenceSchema } from "./notification.js";
 const { Schema } = mongoose;
 const options = { timestamps: true, strict: "throw" };
 const integer = (min, max, defaultValue) => ({
@@ -97,6 +98,11 @@ export const Appointment = mongoose.model(
         match: /^\+?[0-9 ()-]{7,25}$/,
       },
       notes: { type: String, default: "", trim: true, maxlength: 1000 },
+      notificationPreferences: {
+        type: notificationPreferenceSchema,
+        required: true,
+        default: () => ({ inApp: true, sms: false, whatsapp: false }),
+      },
       status: { type: String, required: true, enum: statuses },
       history: {
         type: [

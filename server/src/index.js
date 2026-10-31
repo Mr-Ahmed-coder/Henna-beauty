@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { createApp } from "./app.js";
 import { connectDatabase, databaseReadiness } from "./config/database.js";
 import { initializeModels } from "./models/index.js";
+import { processDueNotifications } from "./notification/engine.js";
 dotenv.config({
   path: fileURLToPath(new URL("../.env", import.meta.url)),
   quiet: true,
@@ -40,8 +41,18 @@ try {
   const server = app.listen(port, "127.0.0.1", () =>
     console.log(`Salon API: http://127.0.0.1:${port}/api/health`),
   );
+  const notificationTimer = process.env.MONGODB_URI
+    ? setInterval(() => {
+        processDueNotifications().catch(() =>
+          console.warn("Notification processing will retry on its next cycle."),
+        );
+      }, 60000)
+    : null;
+  notificationTimer?.unref();
+  if (process.env.MONGODB_URI) await processDueNotifications();
   const shutdown = () =>
     server.close(async () => {
+      if (notificationTimer) clearInterval(notificationTimer);
       await mongoose.disconnect();
       process.exit(0);
     });

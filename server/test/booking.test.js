@@ -359,6 +359,23 @@ test("appointment booking integration", async (t) => {
         (await api(path, { token: saved.token })).data.appointment.customerName,
         "Customer Test",
       );
+      const tracking = await api(path, { token: saved.token });
+      assert.equal(
+        tracking.data.notifications.filter(
+          (notification) => notification.type === "appointment.confirmed",
+        ).length,
+        1,
+      );
+      assert.equal(JSON.stringify(tracking.data.notifications).includes("Customer Test"), false);
+      assert.equal(
+        (
+          await api(path + "/notification-preferences", {
+            method: "PUT",
+            body: { inApp: false, sms: false, whatsapp: false },
+          })
+        ).status,
+        404,
+      );
       await BookingPolicy.updateOne(
         { _id: "salon" },
         { $set: { cancellationEnabled: false, reschedulingEnabled: false } },
@@ -452,6 +469,23 @@ test("appointment booking integration", async (t) => {
       });
       assert.equal(cancelled.status, 200);
       assert.equal(cancelled.data.status, "Cancelled");
+      const preferences = await api(path + "/notification-preferences", {
+        method: "PUT",
+        token: saved.token,
+        body: { inApp: false, sms: false, whatsapp: false },
+      });
+      assert.equal(preferences.status, 200);
+      assert.equal(preferences.data.notificationPreferences.inApp, false);
+      assert.equal(
+        (
+          await api(path + "/notification-preferences", {
+            method: "PUT",
+            token: saved.token,
+            body: { inApp: "no" },
+          })
+        ).status,
+        400,
+      );
       const slots = await api(
         "/api/booking/availability?" +
           new URLSearchParams({

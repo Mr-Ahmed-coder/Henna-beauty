@@ -1,10 +1,10 @@
-# Henna & Beauty Salon — Phase 4B
+# Henna & Beauty Salon — Phase 5
 
 A local MERN foundation for a single salon. React, Vite, Tailwind CSS, React Router, Express, and Mongoose. No deployment has been configured.
 
 Phase 3 adds live appointment booking at `/appointments` and appointment management under `/admin`. Booking requires MongoDB running as a replica set; setup and permissions are described below. The earlier phase sections record the foundation and its verification at that time.
 
-Phase 4 activates `/queue` for private online tickets and adds a combined online/walk-in queue in `/admin`. Queue operations use the same MongoDB replica set and transaction lock as appointments. No notification, payment, remote hosting, or Phase 5 feature is included.
+Phase 4 activates `/queue` for private online tickets and adds a combined online/walk-in queue in `/admin`. Phase 5 adds private in-app visit notifications and appointment tracking updates. Queue operations use the same MongoDB replica set and transaction lock as appointments. Payments and deployment are not configured.
 
 ## Run locally
 
@@ -310,3 +310,17 @@ The customer menu shows actual configured prices/durations and routes an eligibl
 The three public entry points are **Book appointment**, **Join queue**, and **Track my visit**. Tracking accepts only a complete private appointment or ticket link and preserves the existing token-based privacy model.
 
 `/admin` now opens on **Operations**, with today’s appointments, the live waiting queue, Artists with a shift today, configuration guidance, and direct actions to appointments, queue, services, staff, and schedules. The menu groups daily operations separately from salon management. Appointment and queue assignment decisions continue to be made by the existing scheduling engine at action time, including conflicts, breaks, and protected reservations.
+
+## Phase 5: private notifications and customer tracking
+
+Both private tracking pages refresh every 10 seconds. Appointment tracking shows current status, salon-local appointment time, arrival/check-in guidance, and a notification timeline. Queue tracking also shows customers ahead, current position, approximate wait, and call deadlines. Estimates use the existing queue forecast. Keep the full private link safe; access still requires its existing token header. No new public customer lookup is available.
+
+In-app notices cover appointment requests/confirmation, rescheduling/cancellation, reminders, queue entry, approaching turns, reception calls, cancellations, and missed/expired tickets. Approaching-turn notices require a position in the first two waiting tickets and an actual forecast of at most 15 minutes. These notices are advisory; the live status and deadline remain authoritative.
+
+Notifications are persisted in MongoDB with unique event/channel keys and delivery state. Booking/queue mutations write event records in their existing transaction. Confirmation schedules a reminder 24 hours before the visit (immediately for shorter-notice bookings). Rescheduling or cancellation cancels outstanding reminders; appointment progress also cancels unused reminders. The running API processes due notices once per minute and on tracking reads. Scheduled notices survive restarts. Failed attempts use exponential delays, up to three attempts; interrupted claims recover after five minutes. In-app Delivered means the notice is available in the private feed, not that the customer has read it. No browser push or background-device delivery is provided.
+
+Customers can choose in-app updates at entry and change preferences on the private tracking page. Preferences default to in-app on and SMS/WhatsApp off; disabling a channel cancels its undelivered records. `PUT /api/booking/reservations/:reference/notification-preferences` and `PUT /api/queue/tickets/:reference/notification-preferences` accept boolean `inApp`, `sms`, and `whatsapp`, with the same private-token requirements and origin checks as the visit. Existing visit records are preserved; no bulk migration or sample business data is created.
+
+External delivery remains inactive. Reserved provider/sender/API-key environment fields are documented in `server/.env.example`; keep credentials only in the ignored environment. `server/src/notification/providers.js` describes the future adapter configuration, and the notification processor accepts an injectable delivery adapter for testing. Setting credentials does not enable sending. Opted-in external records stay Deferred until a provider implementation and activation are approved. Future adapters must use the stored dedupe key as the provider idempotency key; no actual external message was sent in this phase.
+
+Verification uses isolated MongoDB replica sets, including notification deduplication, preference opt-out, cancellation, retry recovery, provider unavailability, private access, and the existing booking/queue concurrency and persistence regressions. Run `npm run lint`, `npm run test`, and `npm run build`. Browser visual/responsive verification requires local browser access, which was disabled in this environment; responsive styles reuse the existing mobile breakpoints.

@@ -4,6 +4,13 @@ import { DateTime } from "luxon";
 import { QueuePolicy } from "../models/queue.js";
 import { bookingReady, fail, fields } from "../booking/engine.js";
 import {
+  cancelDisabledNotifications,
+  processDueNotifications,
+  validatePreferences,
+} from "../notification/engine.js";
+import { QueueTicket } from "../models/queue.js";
+import { digest } from "../security.js";
+import {
   getQueueSnapshot,
   joinQueue,
   callNext,
@@ -36,9 +43,10 @@ export function queueRouter({ origins, clock = () => DateTime.utc() }) {
       fail(403, "Request origin or content type rejected");
     next();
   });
-  router.get("/catalog", async (_req, res) =>
-    res.json(await getQueueSnapshot({ now: clock() })),
-  );
+  router.get("/catalog", async (_req, res) => {
+    await processDueNotifications();
+    res.json(await getQueueSnapshot({ now: clock() }));
+  });
   router.post(
     "/tickets",
     rateLimit({
@@ -53,7 +61,13 @@ export function queueRouter({ origins, clock = () => DateTime.utc() }) {
         .status(201)
         .json(
           await joinQueue(
-            fields(req.body, ["service", "customerName", "phone", "notes"]),
+            fields(req.body, [
+              "service",
+              "customerName",
+              "phone",
+              "notes",
+              "notificationPreferences",
+            ]),
             { now: clock() },
           ),
         ),
@@ -64,15 +78,16 @@ export function queueRouter({ origins, clock = () => DateTime.utc() }) {
       fail(404, "Ticket not found or private link is invalid");
     return token;
   };
-  router.get("/tickets/:reference", async (req, res) =>
+  router.get("/tickets/:reference", async (req, res) => {
+    await processDueNotifications();
     res.json(
       await getQueueSnapshot({
         reference: req.params.reference,
         token: privateToken(req),
         now: clock(),
       }),
-    ),
-  );
+    );
+  });
   router.patch("/tickets/:reference", async (req, res) => {
     const { action } = fields(req.body, ["action"]);
     res.json(
@@ -81,6 +96,25 @@ export function queueRouter({ origins, clock = () => DateTime.utc() }) {
         now: clock(),
       }),
     );
+  });
+  router.put("/tickets/:reference/notification-preferences", async (req, res) => {
+    const token = privateToken(req);
+    const ticket = await QueueTicket.findOne({
+      reference: req.params.reference,
+      accessHash: digest(token),
+    });
+    if (!ticket) fail(404, "Ticket not found or private link is invalid");
+    const notificationPreferences = validatePreferences(
+      fields(req.body, ["inApp", "sms", "whatsapp"]),
+    );
+    ticket.notificationPreferences = notificationPreferences;
+    await ticket.save();
+    await cancelDisabledNotifications(
+      "Queue",
+      ticket.reference,
+      notificationPreferences,
+    );
+    res.json({ notificationPreferences });
   });
   return router;
 }
@@ -99,7 +133,13 @@ export function queueAdminRouter({ clock = () => DateTime.utc() } = {}) {
       .status(201)
       .json(
         await joinQueue(
-          fields(req.body, ["service", "customerName", "phone", "notes"]),
+          fields(req.body, [
+            "service",
+            "customerName",
+            "phone",
+            "notes",
+            "notificationPreferences",
+          ]),
           { source: "Walk-in", now: clock() },
         ),
       ),

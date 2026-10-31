@@ -143,6 +143,67 @@
 .booking-private input {
   font-size: 12px;
 }
+.private-updates {
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid #d7c4b3;
+}
+.private-updates-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.private-updates-heading h3 {
+  font-size: 23px;
+  margin-top: 4px;
+}
+.private-updates-heading > span {
+  color: #806b5f;
+  font-size: 10px;
+  padding-top: 5px;
+  text-align: right;
+}
+.notification-toggle {
+  display: flex !important;
+  align-items: center;
+  gap: 10px !important;
+  margin-top: 16px;
+  font-size: 12px !important;
+}
+.notification-toggle input {
+  accent-color: #482735;
+  width: 18px;
+  height: 18px;
+}
+.booking-ui .notification-toggle input[type="checkbox"] {
+  width: 18px;
+  min-height: 18px;
+  padding: 0;
+  flex-shrink: 0;
+}
+.notification-feed {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 0;
+  display: grid;
+  gap: 11px;
+}
+.notification-feed li {
+  display: grid;
+  gap: 3px;
+  padding: 13px 14px;
+  border-left: 2px solid #a9814c;
+  background: #fffaf3;
+  font-size: 12px;
+}
+.notification-feed span,
+.notification-feed small {
+  color: #705c50;
+}
+.notification-feed small {
+  font-size: 10px;
+}
 .booking-admin-search {
   display: flex;
   gap: 10px;
@@ -247,6 +308,9 @@
   }
   .booking-admin-search > * {
     width: 100%;
+  }
+  .private-updates-heading {
+    align-items: start;
   }
   .booking-admin-break {
     flex-direction: column;

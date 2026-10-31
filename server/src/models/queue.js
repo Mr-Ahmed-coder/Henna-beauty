@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { notificationPreferenceSchema } from "./notification.js";
 const { Schema } = mongoose;
 const options = { timestamps: true, strict: "throw" };
 const minutes = (value, min = 0, max = 180) => ({
@@ -63,6 +64,11 @@ const ticketSchema = new Schema(
     customerName: { type: String, required: true, trim: true, maxlength: 120 },
     phone: { type: String, required: true },
     notes: { type: String, default: "", maxlength: 1000 },
+    notificationPreferences: {
+      type: notificationPreferenceSchema,
+      required: true,
+      default: () => ({ inApp: true, sms: false, whatsapp: false }),
+    },
     status: { type: String, enum: queueStatuses, required: true },
     active: { type: Boolean, required: true, default: true },
     checkedInAt: Date,

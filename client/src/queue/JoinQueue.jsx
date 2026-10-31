@@ -11,6 +11,7 @@ export default function JoinQueue({ session, onJoined }) {
       phone: "",
       notes: "",
     }),
+    [inAppUpdates, setInAppUpdates] = useState(true),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   async function submit(event) {
@@ -21,7 +22,19 @@ export default function JoinQueue({ session, onJoined }) {
       onJoined(
         await queueApi(
           session ? "/api/admin/queue/tickets" : "/api/queue/tickets",
-          { method: "POST", session, body: { service, ...customer } },
+          {
+            method: "POST",
+            session,
+            body: {
+              service,
+              ...customer,
+              notificationPreferences: {
+                inApp: inAppUpdates,
+                sms: false,
+                whatsapp: false,
+              },
+            },
+          },
         ),
       );
     } catch (err) {
@@ -66,7 +79,8 @@ export default function JoinQueue({ session, onJoined }) {
             do not reserve an appointment. Remote customers have{" "}
             {data.policy.remoteArrivalMinutes} minutes to arrive after being
             called, plus {data.policy.graceMinutes} minutes’ grace. No
-            notifications are sent.
+            external messages are sent; private in-app updates appear on your
+            ticket link.
           </p>
           <form className="booking-form" onSubmit={submit}>
             <label>
@@ -142,6 +156,14 @@ export default function JoinQueue({ session, onJoined }) {
               details are visible only through your private link and authorized
               staff access. Please avoid sensitive information in notes.
             </p>
+            <label className="notification-toggle">
+              <input
+                type="checkbox"
+                checked={inAppUpdates}
+                onChange={(event) => setInAppUpdates(event.target.checked)}
+              />
+              Keep secure in-app queue updates in this private ticket link
+            </label>
             <button
               className="button"
               disabled={busy || !service || !accepting}

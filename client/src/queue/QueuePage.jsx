@@ -4,6 +4,7 @@ import { PageHeading } from "../components/Shared";
 import { formatTime, money } from "../booking/api";
 import { queueApi, useQueuePolling } from "./api";
 import JoinQueue from "./JoinQueue";
+import PrivateUpdates from "../notifications/PrivateUpdates";
 function TicketView({ reference, token }) {
   const [revision, setRevision] = useState(0),
     { data, error: pollError } = useQueuePolling(
@@ -24,6 +25,21 @@ function TicketView({ reference, token }) {
         body: { action: "cancel" },
       });
       setConfirm(false);
+      setRevision((n) => n + 1);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function savePreferences(notificationPreferences) {
+    setBusy(true);
+    setError("");
+    try {
+      await queueApi(
+        "/api/queue/tickets/" + encodeURIComponent(reference) + "/notification-preferences",
+        { method: "PUT", token, body: notificationPreferences },
+      );
       setRevision((n) => n + 1);
     } catch (err) {
       setError(err.message);
@@ -70,6 +86,8 @@ function TicketView({ reference, token }) {
                   ? `${ticket.position} in the waiting queue`
                   : "Called or no longer waiting"}
               </dd>
+              <dt>Customers ahead</dt>
+              <dd>{ticket.position ? Math.max(0, ticket.position - 1) : "—"}</dd>
               <dt>Approximate wait until called</dt>
               <dd>
                 {ticket.position
@@ -135,7 +153,7 @@ function TicketView({ reference, token }) {
             <p className="booking-note">
               Last updated {formatTime(data.serverNow, data.timezone)} · Updates
               every 10 seconds. Positions and wait estimates can change with
-              artist availability and appointments. No notification is sent.
+              artist availability and appointments.
             </p>
             {["Waiting", "Checked In", "Called"].includes(ticket.status) && (
               <button
@@ -163,6 +181,13 @@ function TicketView({ reference, token }) {
                 </div>
               </div>
             )}
+            <PrivateUpdates
+              notifications={data.notifications}
+              preferences={ticket.notificationPreferences}
+              timezone={ticket.timezone}
+              busy={busy}
+              onPreferenceChange={savePreferences}
+            />
           </div>
           <Link className="text-link" to="/queue">
             Back to today’s queue

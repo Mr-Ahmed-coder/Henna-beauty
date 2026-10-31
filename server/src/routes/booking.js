@@ -9,6 +9,12 @@ import {
 } from "../models/booking.js";
 import { digest } from "../security.js";
 import {
+  cancelDisabledNotifications,
+  notificationsFor,
+  processDueNotifications,
+  validatePreferences,
+} from "../notification/engine.js";
+import {
   availability,
   bookingReady,
   configuration,
@@ -131,6 +137,7 @@ export function bookingRouter({ origins }) {
               "customerName",
               "phone",
               "notes",
+              "notificationPreferences",
             ]),
           ),
         ),
@@ -145,8 +152,13 @@ export function bookingRouter({ origins }) {
     });
     if (!doc)
       fail(404, "Reservation not found or private access link is invalid");
+    await processDueNotifications();
     const { policy } = await configuration();
-    res.json({ appointment: safeAppointment(doc), policy });
+    res.json({
+      appointment: safeAppointment(doc),
+      policy,
+      notifications: await notificationsFor("Appointment", doc.reference),
+    });
   });
   router.patch("/reservations/:reference", async (req, res) => {
     const token = req.get("X-Booking-Token");
@@ -159,6 +171,28 @@ export function bookingRouter({ origins }) {
         { token },
       ),
     );
+  });
+  router.put("/reservations/:reference/notification-preferences", async (req, res) => {
+    const token = req.get("X-Booking-Token");
+    if (!token || token.length > 128)
+      fail(404, "Reservation not found or private access link is invalid");
+    const doc = await Appointment.findOne({
+      reference: req.params.reference,
+      accessHash: digest(token),
+    });
+    if (!doc)
+      fail(404, "Reservation not found or private access link is invalid");
+    const notificationPreferences = validatePreferences(
+      fields(req.body, ["inApp", "sms", "whatsapp"]),
+    );
+    doc.notificationPreferences = notificationPreferences;
+    await doc.save();
+    await cancelDisabledNotifications(
+      "Appointment",
+      doc.reference,
+      notificationPreferences,
+    );
+    res.json({ notificationPreferences });
   });
   return router;
 }
@@ -231,6 +265,7 @@ export function appointmentAdminRouter() {
             "customerName",
             "phone",
             "notes",
+            "notificationPreferences",
           ]),
           String(req.staff._id),
         ),

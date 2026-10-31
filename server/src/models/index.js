@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { bookingModels } from "./booking.js";
 import { queueModels } from "./queue.js";
+import { notificationModels } from "./notification.js";
 const { Schema } = mongoose;
 const options = { timestamps: true, strict: "throw" };
 const text = (max = 120) => ({
@@ -144,6 +145,7 @@ export async function initializeModels() {
       Session,
       ...bookingModels,
       ...queueModels,
+      ...notificationModels,
     ].map((m) => m.init()),
   );
 }

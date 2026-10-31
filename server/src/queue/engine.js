@@ -13,6 +13,11 @@ import {
   objectId,
 } from "../booking/engine.js";
 import { randomToken, digest } from "../security.js";
+import {
+  notificationsFor,
+  queueEvent,
+  validatePreferences,
+} from "../notification/engine.js";
 const pending = ["Waiting", "Checked In"];
 const terminal = ["Completed", "Cancelled", "Missed"];
 export async function queueContext(session = null, now = DateTime.utc()) {
@@ -58,13 +63,23 @@ function expiredQuery(context) {
 }
 async function expire(session, context) {
   const { now } = context;
+  const tickets = await QueueTicket.find(expiredQuery(context)).session(session);
+  for (const ticket of tickets) {
+    ticket.status = "Missed";
+    ticket.active = false;
+    ticket.finishedAt = now.toJSDate();
+    ticket.history.push({
+      status: "Missed",
+      at: now.toJSDate(),
+      by: "system expiry",
+    });
+    await queueEvent(ticket, "queue.missed", { session });
+  }
   await QueueTicket.updateMany(
     expiredQuery(context),
     {
       $set: { status: "Missed", active: false, finishedAt: now.toJSDate() },
-      $push: {
-        history: { status: "Missed", at: now.toJSDate(), by: "system expiry" },
-      },
+      $push: { history: { status: "Missed", at: now.toJSDate(), by: "system expiry" } },
     },
     { session },
   );
@@ -226,6 +241,18 @@ export async function getQueueSnapshot({
   };
   const forecast =
     reference || staff ? await estimates(tickets, context) : new Map();
+  if (forecast.size)
+    await Promise.all(
+      tickets
+        .filter(
+          (ticket) =>
+            pending.includes(ticket.status) &&
+            forecast.get(String(ticket._id))?.approximateWaitMinutes !== null &&
+            forecast.get(String(ticket._id))?.approximateWaitMinutes <= 15 &&
+            (forecast.get(String(ticket._id))?.position || Infinity) <= 2,
+        )
+        .map((ticket) => queueEvent(ticket, "queue.turn_approaching")),
+    );
   if (staff) {
     const visible =
       staff.role === "Artist"
@@ -242,7 +269,11 @@ export async function getQueueSnapshot({
       accessHash: digest(token || ""),
     });
     if (!own) fail(404, "Ticket not found or private link is invalid");
-    return { ...common, ticket: decorate(own, forecast, context) };
+    return {
+      ...common,
+      ticket: decorate(own, forecast, context),
+      notifications: await notificationsFor("Queue", own.reference),
+    };
   }
   const services = await Service.find({ active: true }).select(
     "name category description imageUrl durationMinutes priceMinor",
@@ -270,6 +301,9 @@ export async function joinQueue(
   { source = "Online", now = DateTime.utc() } = {},
 ) {
   const data = customerData(body),
+    notificationPreferences = body.notificationPreferences
+      ? validatePreferences(body.notificationPreferences)
+      : undefined,
     normalized = data.phone.replace(/[ ()-]/g, "");
   if (!/^\+[1-9]\d{6,14}$/.test(normalized))
     fail(
@@ -345,6 +379,7 @@ export async function joinQueue(
           priceMinor: service.priceMinor,
           currency: context.settings.currency,
           ...data,
+          ...(notificationPreferences ? { notificationPreferences } : {}),
           phone: normalized,
           status,
           active: true,
@@ -354,6 +389,7 @@ export async function joinQueue(
       ],
       { session },
     );
+    await queueEvent(doc, "queue.joined", { session });
     return plain(doc);
   });
   return { ticket, token };
@@ -394,6 +430,7 @@ export async function callNext({ artist, now = DateTime.utc() } = {}) {
         by: "reception",
       });
       await ticket.save({ session });
+      await queueEvent(ticket, "queue.called", { session });
       return plain(ticket);
     }
     fail(
@@ -499,6 +536,10 @@ export async function changeTicket(
       by: staff ? String(staff._id) : "customer",
     });
     await ticket.save({ session });
+    if (ticket.status === "Cancelled")
+      await queueEvent(ticket, "queue.cancelled", { session });
+    else if (ticket.status === "Missed")
+      await queueEvent(ticket, "queue.missed", { session });
     return plain(ticket);
   });
 }

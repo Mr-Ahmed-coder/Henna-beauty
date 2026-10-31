@@ -10,6 +10,11 @@ import {
 } from "../models/booking.js";
 import { digest, randomToken } from "../security.js";
 import { QueueTicket } from "../models/queue.js";
+import {
+  appointmentEvent,
+  cancelAppointmentReminders,
+  validatePreferences,
+} from "../notification/engine.js";
 export const fail = (status, message) => {
   throw Object.assign(new Error(message), { status });
 };
@@ -276,6 +281,9 @@ async function choose(body, session, exclude) {
 }
 export async function createReservation(body, by = "customer") {
   const customer = customerData(body),
+    notificationPreferences = body.notificationPreferences
+      ? validatePreferences(body.notificationPreferences)
+      : undefined,
     token = randomToken(),
     reference = "HB-" + randomBytes(8).toString("hex").toUpperCase();
   const appointment = await atomic(async (session) => {
@@ -297,10 +305,16 @@ export async function createReservation(body, by = "customer") {
           end: slot.end,
           timezone: settings.timezone,
           ...customer,
+          ...(notificationPreferences ? { notificationPreferences } : {}),
           status,
           history: [{ status, at: new Date(), by }],
         },
       ],
+      { session },
+    );
+    await appointmentEvent(
+      doc,
+      status === "Confirmed" ? "appointment.confirmed" : "appointment.requested",
       { session },
     );
     return doc;
@@ -428,6 +442,17 @@ export async function changeReservation(
       });
     } else fail(400, "Unknown appointment action");
     await doc.save({ session });
+    if (body.action === "reschedule") {
+      await cancelAppointmentReminders(doc.reference, session);
+      await appointmentEvent(doc, "appointment.rescheduled", { session });
+    } else if (body.status === "Confirmed")
+      await appointmentEvent(doc, "appointment.confirmed", { session });
+    else if (body.status === "Cancelled") {
+      await cancelAppointmentReminders(doc.reference, session);
+      await appointmentEvent(doc, "appointment.cancelled", { session });
+    }
+    else if (["Checked In", "In Service", "Completed", "No-Show"].includes(body.status))
+      await cancelAppointmentReminders(doc.reference, session);
     return safeAppointment(doc);
   });
 }

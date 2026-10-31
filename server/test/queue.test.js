@@ -205,6 +205,25 @@ test("hybrid queue integration on a real isolated replica set", async (t) => {
         two = await privateView(walk.data);
       assert.equal(one.data.ticket.position, 1);
       assert.equal(two.data.ticket.position, 2);
+      assert.equal(
+        one.data.notifications.some(
+          (notification) => notification.type === "queue.joined",
+        ),
+        true,
+      );
+      assert.equal(JSON.stringify(one.data.notifications).includes("123456"), false);
+      assert.equal(
+        (
+          await api(
+            "/api/queue/tickets/" + online.data.ticket.reference + "/notification-preferences",
+            {
+              method: "PUT",
+              body: { inApp: false, sms: false, whatsapp: false },
+            },
+          )
+        ).status,
+        404,
+      );
       assert.equal(one.data.ticket.approximateWaitMinutes, 0);
       assert.equal(
         (await api("/api/queue/tickets/" + online.data.ticket.reference))
@@ -259,7 +278,8 @@ test("hybrid queue integration on a real isolated replica set", async (t) => {
       assert.ok(result.data.end <= at("11:00"));
       assert.equal((await call(b)).status, 409); // Only the older long service remains, and B is not qualified.
       clock = initial.set({ hour: 12, minute: 15 });
-      assert.equal((await call(a)).status, 409); // A's recurring break.
+      const breakCall = await call(a);
+      assert.equal(breakCall.status, 409, JSON.stringify(breakCall.data)); // A's recurring break.
       clock = initial.set({ hour: 13 });
       assert.equal((await call(a)).data.reference, first.data.ticket.reference);
     },
@@ -284,7 +304,14 @@ test("hybrid queue integration on a real isolated replica set", async (t) => {
       const online = (await join("online")).data;
       const assigned = await call(a);
       assert.equal(assigned.status, 200);
-      assert.equal((await privateView(online)).data.ticket.status, "Called");
+      const called = await privateView(online);
+      assert.equal(called.data.ticket.status, "Called");
+      assert.equal(
+        called.data.notifications.some(
+          (notification) => notification.type === "queue.called",
+        ),
+        true,
+      );
       assert.equal((await change(assigned.data, "start")).status, 409);
       assert.equal((await change(assigned.data, "missed")).status, 409);
       clock = initial.plus({ minutes: 24 });
@@ -296,6 +323,7 @@ test("hybrid queue integration on a real isolated replica set", async (t) => {
       clock = initial.plus({ minutes: 26 });
       const secondDevice = await privateView(online);
       assert.equal(secondDevice.data.ticket.status, "Missed");
+      assert.equal(secondDevice.data.notifications.filter((item) => item.type === "queue.missed").length, 1);
       assert.equal((await change(assigned.data, "start")).status, 409);
       assert.equal(
         (await change(assigned.data, "missed")).data.status,

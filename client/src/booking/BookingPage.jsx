@@ -1,50 +1,36 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { PageHeading } from "../components/Shared";
 import BookingForm from "./BookingForm";
-import { bookingApi, formatTime, money } from "./api";
+import { bookingApi, formatTime, money, useBookingPolling } from "./api";
+import PrivateUpdates from "../notifications/PrivateUpdates";
 export default function BookingPage() {
   const location = useLocation(),
     navigate = useNavigate(),
-    [details, setDetails] = useState(null),
-    [loadedAccess, setLoadedAccess] = useState(""),
-    [policy, setPolicy] = useState(null),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [confirmCancel, setConfirmCancel] = useState(false),
-    [reschedule, setReschedule] = useState(false);
+    [reschedule, setReschedule] = useState(false),
+    [revision, setRevision] = useState(0);
   const params = new URLSearchParams(location.hash.slice(1)),
     reference = params.get("reference"),
     token = params.get("token"),
     initialService = new URLSearchParams(location.search).get("service") || "",
     manage = location.pathname.endsWith("/manage");
-  useEffect(() => {
-    if (!manage || !reference || !token) return;
-    const controller = new AbortController();
-    bookingApi("/api/booking/reservations/" + encodeURIComponent(reference), {
-      token,
-      signal: controller.signal,
-    })
-      .then((data) => {
-        setDetails(data.appointment);
-        setLoadedAccess(reference + ":" + token);
-        setError("");
-        setPolicy(data.policy);
-      })
-      .catch((err) => {
-        if (err.name !== "AbortError") {
-          setError(err.message);
-          setDetails(null);
-        }
-      });
-    return () => controller.abort();
-  }, [manage, reference, token]);
+  const { data, error: pollError } = useBookingPolling(
+    manage && reference && token
+      ? "/api/booking/reservations/" + encodeURIComponent(reference)
+      : "",
+    token,
+    revision,
+  );
+  const details = data?.appointment?.reference === reference ? data.appointment : null,
+    policy = data?.policy,
+    notifications = data?.notifications || [];
   function booked(result) {
-    setDetails(result.appointment);
+    setRevision((value) => value + 1);
     setReschedule(false);
     setError("");
-    if (result.token)
-      setLoadedAccess(result.appointment.reference + ":" + result.token);
     if (result.token)
       navigate(
         "/appointments/manage#" +
@@ -58,15 +44,29 @@ export default function BookingPage() {
     setBusy(true);
     setError("");
     try {
-      setDetails(
-        await bookingApi("/api/booking/reservations/" + reference, {
-          method: "PATCH",
-          token,
-          body: { action: "status", status: "Cancelled" },
-        }),
-      );
+      await bookingApi("/api/booking/reservations/" + reference, {
+        method: "PATCH",
+        token,
+        body: { action: "status", status: "Cancelled" },
+      });
       setReschedule(false);
       setConfirmCancel(false);
+      setRevision((value) => value + 1);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function savePreferences(notificationPreferences) {
+    setBusy(true);
+    setError("");
+    try {
+      await bookingApi(
+        "/api/booking/reservations/" + encodeURIComponent(reference) + "/notification-preferences",
+        { method: "PUT", token, body: notificationPreferences },
+      );
+      setRevision((value) => value + 1);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -88,13 +88,14 @@ export default function BookingPage() {
           : "Choose a service, find your time, and reserve your salon visit."}
       </PageHeading>
       <section className="booking-container container">
-        {error && (
+        {(error || pollError) && (
           <div className="booking-error" role="alert">
-            {error}
+            {error || pollError}
+            {pollError && " Automatic refresh will retry; displayed details may be stale."}
           </div>
         )}
         {manage ? (
-          details && loadedAccess === reference + ":" + token ? (
+          details ? (
             <>
               <div className="booking-confirmation">
                 <p className="eyebrow">
@@ -106,7 +107,7 @@ export default function BookingPage() {
                     ? "Your request is saved and awaiting salon approval."
                     : details.status === "Cancelled"
                       ? "Your reservation has been cancelled."
-                      : "Your reservation is saved."}
+                    : "Your reservation is saved. This page refreshes every 10 seconds."}
                 </p>
                 <dl>
                   <dt>Service</dt>
@@ -143,8 +144,8 @@ export default function BookingPage() {
                   />
                 </label>
                 <p className="booking-note">
-                  No notification has been sent. Save the reference and private
-                  link. The reference alone does not grant access.
+                  Save this private link. The reference alone does not grant
+                  access, and this page shows secure in-app updates.
                 </p>
                 {policy && (
                   <p className="booking-note">
@@ -158,6 +159,27 @@ export default function BookingPage() {
                       : "disabled"}
                     . Changes are checked against current salon rules.
                   </p>
+                )}
+                {details.status === "Pending" && (
+                  <p className="booking-note">
+                    Your request is awaiting salon approval. Keep this private
+                    page available for the confirmation update.
+                  </p>
+                )}
+                {details.status === "Confirmed" && (
+                  <p className="booking-note">
+                    Please arrive a few minutes before your appointment and
+                    check in with reception when you arrive.
+                  </p>
+                )}
+                {details.status === "Checked In" && (
+                  <p className="booking-note">You are checked in. Please wait for your artist.</p>
+                )}
+                {details.status === "In Service" && (
+                  <p className="booking-note">Your service is in progress.</p>
+                )}
+                {details.status === "Completed" && (
+                  <p className="booking-note">This appointment has been completed.</p>
                 )}
                 {["Pending", "Confirmed"].includes(details.status) && (
                   <div className="booking-actions">
@@ -201,6 +223,13 @@ export default function BookingPage() {
                       </div>
                     </div>
                   )}
+                <PrivateUpdates
+                  notifications={notifications}
+                  preferences={details.notificationPreferences}
+                  timezone={details.timezone}
+                  busy={busy}
+                  onPreferenceChange={savePreferences}
+                />
               </div>
               {reschedule && (
                 <BookingForm
@@ -214,7 +243,6 @@ export default function BookingPage() {
                 className="text-link"
                 to="/appointments"
                 onClick={() => {
-                  setDetails(null);
                   setError("");
                 }}
               >
