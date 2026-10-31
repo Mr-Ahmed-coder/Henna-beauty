@@ -1,6 +1,7 @@
 import { Router } from "express";
 import mongoose from "mongoose";
 import { rateLimit } from "express-rate-limit";
+import { appointmentAdminRouter } from "./booking.js";
 import {
   Staff,
   Session,
@@ -300,5 +301,6 @@ export function adminRouter({
     if (!result.deletedCount) fail(404, "Schedule not found");
     res.json({ ok: true });
   });
+  router.use(appointmentAdminRouter());
   return router;
 }

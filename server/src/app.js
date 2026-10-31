@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { adminRouter } from "./routes/admin.js";
+import { bookingRouter } from "./routes/booking.js";
 export function createApp({
   origins = ["http://localhost:5173", "http://127.0.0.1:5173"],
   databaseStatus = () => "not-configured",
@@ -19,6 +20,7 @@ export function createApp({
     }),
   );
   app.use("/api/admin", adminRouter({ origins }));
+  app.use("/api/booking", bookingRouter({ origins }));
   app.use((_req, res) => res.status(404).json({ error: "Endpoint not found" }));
   app.use((err, _req, res, _next) =>
     res

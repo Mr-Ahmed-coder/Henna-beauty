@@ -22,13 +22,13 @@ export function VisitCTA() {
       </div>
       <div>
         <p>
-          Appointments and a walk-in queue are on the way.
+          Reserve your next salon visit online.
           <br />
-          For now, explore what’s taking shape.
+          The walk-in queue is coming in a future phase.
         </p>
         <div className="actions">
           <Link className="button light" to="/appointments">
-            Appointment information <ArrowUpRight size={17} />
+            Book an appointment <ArrowUpRight size={17} />
           </Link>
           <Link className="text-link light-text" to="/queue">
             Walk-in queue <ArrowRight size={17} />

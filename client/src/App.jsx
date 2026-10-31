@@ -6,6 +6,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import ComingSoon from "./pages/ComingSoon";
 import Admin from "./admin/Admin";
+import BookingPage from "./booking/BookingPage";
 export default function App() {
   return (
     <Routes>
@@ -15,7 +16,7 @@ export default function App() {
         <Route path="services" element={<Services />} />
         <Route path="about" element={<About />} />
         <Route path="contact" element={<Contact />} />
-        <Route path="appointments" element={<ComingSoon />} />
+        <Route path="appointments/*" element={<BookingPage />} />
         <Route path="queue" element={<ComingSoon queue />} />
         <Route
           path="*"

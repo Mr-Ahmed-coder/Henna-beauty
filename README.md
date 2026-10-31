@@ -1,6 +1,8 @@
-# Henna & Beauty Salon — Phase 2
+# Henna & Beauty Salon — Phase 3
 
 A local MERN foundation for a single salon. React, Vite, Tailwind CSS, React Router, Express, and Mongoose. No deployment has been configured.
+
+Phase 3 adds live appointment booking at `/appointments` and appointment management under `/admin`. Booking requires MongoDB running as a replica set; setup and permissions are described below. The earlier phase sections record the foundation and its verification at that time.
 
 ## Run locally
 
@@ -58,7 +60,7 @@ Home, Services, About, and Contact are navigable and responsive, with reusable c
 
 All business identity, proposed services, hours, address, and contact details are placeholders or marked as awaiting confirmation. No invented testimonials or operational claims are included. Photographs are illustrative Unsplash images, not salon portfolio work; remote fonts are from Google Fonts. These require internet access. Replace them with approved brand assets and confirmed details before launch. Native font fallbacks are provided.
 
-The appointment and queue entry points remain informational placeholders. Phase 3 requires explicit approval.
+The queue entry point remains an informational placeholder. Phase 3 replaces the appointment placeholder with the booking flow described below. Phase 4 requires explicit approval.
 
 ## Phase 1 verification
 
@@ -128,3 +130,70 @@ Changed areas: administration UI and route registration; server models, security
 Browser verification at 1440 × 900 and 390 × 844 covered staff login, service creation, mobile navigation, repeated business-hours saves, and the schedule editor. Admin views fit without horizontal overflow. The automated tests use a disposable database; no real salon accounts or business records were created. Atlas credentials and live Atlas connectivity remain unverified.
 
 Security references: [Express security guidance](https://expressjs.com/advanced/best-practice-security/) and [Mongoose validation](https://mongoosejs.com/docs/validation.html).
+
+## Phase 3: appointment booking
+
+### Local database requirements
+
+Appointments use MongoDB transactions. Atlas supports these, and local development needs a replica set rather than a standalone `mongod`. Existing staff administration continues to work on standalone MongoDB, but booking returns a clear 503 until transaction support is available. No booking data or availability is fabricated when the database is missing.
+
+For a local single-node development replica set, start your installed MongoDB with `mongod --replSet rs0 --bind_ip 127.0.0.1 --dbpath <your-existing-local-data-directory>`, then run `rs.initiate()` once in `mongosh`. Use `MONGODB_URI=mongodb://127.0.0.1:27017/salon?replicaSet=rs0` in the ignored `server/.env`. Choose a data directory outside the source checkout. This is local setup only; no hosting or deployment configuration is supplied. The integration tests provision and remove their own isolated replica set automatically and never read your salon database URI.
+
+### Prepare real availability
+
+1. In `/admin`, create active services with prices and durations, configure business hours, currency, and the salon's IANA timezone, and create active Artist accounts with weekly shifts.
+2. Open **Appointments → Booking configuration**. Assign the services each Artist is qualified to provide. Artists without qualifications or available shifts produce no slots. Add recurring weekday breaks using salon-local times. Changes to profiles do not alter staff login roles or credentials.
+3. Review booking rules. Defaults: immediate confirmation, 60-minute minimum notice, 90-day booking horizon, 15-minute slot spacing, and customer cancellation/rescheduling enabled with 24 hours' notice. Admins can change these values or require approval. Pending requests occupy their reserved time until confirmed or cancelled; they do not expire automatically.
+4. Customers can open `/appointments`, select a live service, a preferred Artist or any qualified available Artist, a date and time, enter name/phone/optional notes, review, and confirm. The selected Artist is shown in the final confirmation. Prices are snapshots in the configured currency's smallest units; no payment is processed.
+
+Availability intersects the salon's open hours with weekly staff shifts, then excludes breaks and overlapping appointments. All calculations use the configured salon timezone; stored start/end values are UTC. Slot labels include the timezone offset, including distinct times during a repeated daylight-saving hour. Nonexistent spring-forward times are skipped. Closed days, unavailable shifts, inactive artists/services, insufficient notice, past dates/times, and dates beyond the horizon are rejected. Overnight shifts remain unsupported. There are no invented fallback slots.
+
+### Privacy and changes
+
+Each reservation has a random unique `HB-…` reference and a separate 256-bit access token. Only a SHA-256 hash of the token is stored. The confirmation provides a private management link with reference and token in the URL fragment; the token is sent to the API in `X-Booking-Token`, not a query string. Browser refresh reopens the saved reservation. The reference alone, customer name, or phone number cannot retrieve private details. Keep the link private: it grants access to customer details and permitted cancellation/rescheduling. No account, notification, token recovery, or notification integration is provided. For manual staff reservations, the private customer link is displayed once in the admin screen for secure sharing.
+
+Customer changes use current salon policy and require a Pending or Confirmed reservation. The API enforces cancellation/rescheduling switches and notice periods. Admins and Receptionists can make changes outside customer notice restrictions, but cannot book past/unavailable times or bypass qualification/conflict checks. Rescheduling keeps the booked service, price, and duration; if the service has been removed, disabled, or its duration changed, cancel and create a new reservation. Menu/schedule/profile edits affect later availability checks and do not silently move or cancel existing reservations. Rescheduling uses current salon timezone settings.
+
+Every appointment mutation first modifies one shared salon lock document inside a transaction, then checks availability and writes the reservation. Concurrent transactions conflict on that document and retry against a fresh snapshot. A failed reschedule leaves the original reservation intact; no time is released before the replacement commits. This serializes mutations for this single salon and works across API processes; it does not depend on an in-memory mutex. References have a unique database index. Transactions use snapshot reads and majority writes. Customer API responses are `no-store`; public booking requests have per-process IP rate limits (120 requests/minute and 20 creations/hour). As with login limits, a shared rate-limit store should be considered before any future multi-instance hosting.
+
+### Staff appointment permissions and statuses
+
+Admins and Receptionists can search reservations by literal reference/name/phone, filter status, page through results, create manual reservations, confirm/cancel, and reschedule/reassign to an available qualified Artist. Artists see only their own reservations and can update progress for their assigned appointments. Only Admins can edit booking rules, artist qualifications, and recurring breaks. The existing authentication, session, CSRF, and staff-management permissions are reused.
+
+Allowed transitions:
+
+| Current status                  | Next statuses                  |
+| ------------------------------- | ------------------------------ |
+| Pending                         | Confirmed, Cancelled           |
+| Confirmed                       | Checked In, Cancelled, No-Show |
+| Checked In                      | In Service, Cancelled          |
+| In Service                      | Completed                      |
+| Completed / Cancelled / No-Show | None (terminal)                |
+
+Artists can only advance their own appointment to Checked In, In Service, Completed, or No-Show when that transition is valid. Completion and No-Show require the appointment start time to have passed. Cancelled and No-Show reservations release capacity; Pending, Confirmed, Checked In, In Service, and Completed records block their original interval. History records staff/customer status changes and rescheduling events.
+
+### API and source map
+
+| API                                                                         | Purpose                                                                                             |
+| --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `GET /api/booking/catalog`                                                  | Active services, public Artist names/qualifications, timezone, currency, booking rules              |
+| `GET /api/booking/availability?service=…&date=YYYY-MM-DD&artist=…`          | Live slots; artist is optional                                                                      |
+| `POST /api/booking/reservations`                                            | Reserve with `service`, optional `artist`, UTC `start`, `customerName`, `phone`, optional `notes`   |
+| `GET /api/booking/reservations/:reference`                                  | Private details; requires `X-Booking-Token`                                                         |
+| `PATCH /api/booking/reservations/:reference`                                | Customer `action: status, status: Cancelled` or `action: reschedule, start, artist`; requires token |
+| `GET/POST /api/admin/appointments`                                          | Protected staff list/search/filter/pagination or manual creation                                    |
+| `PATCH /api/admin/appointments/:reference`                                  | Protected status, reschedule, and reassignment operations                                           |
+| `GET/PUT /api/admin/booking-policy`                                         | Rules; writes require Admin                                                                         |
+| `GET /api/admin/artist-profiles`, `PUT /api/admin/artist-profiles/:staffId` | Qualifications and recurring breaks; writes require Admin                                           |
+
+Models are in `server/src/models/booking.js`; availability/transactions in `server/src/booking/engine.js`; new APIs in `server/src/routes/booking.js`; customer forms/management in `client/src/booking/`; admin appointments in `client/src/admin/AppointmentAdmin.jsx`. The booking router is mounted after existing staff-authentication and CSRF middleware. New scoped styles preserve the existing palette and public layout. Appointment entry-point copy was updated to reflect live booking; the queue page and queue functionality remain unchanged.
+
+### Verification
+
+Run `npm run lint`, `npm run test`, and `npm run build`. Phase 1/2 regression tests remain, alongside real replica-set booking integration tests for successful creation, database reconnect/API restart persistence, qualified artists and different service durations, breaks/hours/notice constraints, concurrent overlap conflicts and reschedule-versus-create races, cancellation rules, private-token access, authorization, search, approval, lifecycle transitions, daylight-saving repeated hours and spring gaps. Browser checks cover customer confirmation and refresh, mobile rescheduling, manual staff creation and status updates, booking-rule/profile saves, and responsive layouts at 1440 × 900 and 390 × 844. All browser records are disposable test data.
+
+Added runtime dependency: Luxon for timezone calculations. Atlas remains unverified without credentials. No remote, deployment, notification integration, or virtual queue was added. Phase 4 awaits approval.
+
+Final Phase 3 checks: lint and production build pass; all 10 reported tests pass. The production dependency audit (`npm audit --omit=dev`) reports zero vulnerabilities. The earlier development-tool audit findings are recorded in the Phase 2 notes. Browser verification also confirmed Pending approval status, inline cancellation, the cancelled slot becoming available again, and saving qualification/break profiles without horizontal overflow.
+
+Implementation references: [MongoDB transaction/write-conflict behavior](https://www.mongodb.com/docs/manual/core/transactions-production-consideration/), [Mongoose transactions](https://mongoosejs.com/docs/transactions.html), and [Luxon timezone APIs](https://moment.github.io/luxon/api-docs/).

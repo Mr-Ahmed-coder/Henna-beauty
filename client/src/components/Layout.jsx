@@ -19,12 +19,20 @@ export default function Layout() {
   const main = useRef(null);
   useEffect(() => {
     window.scrollTo(0, 0);
-    document.title = `${{ "/": "Home", "/services": "Services", "/about": "About", "/contact": "Contact", "/appointments": "Appointments", "/queue": "Queue" }[pathname] || "Page not found"} · Henna & Beauty Preview`;
+    document.title = `${pathname.startsWith("/appointments") ? "Appointments" : { "/": "Home", "/services": "Services", "/about": "About", "/contact": "Contact", "/queue": "Queue" }[pathname] || "Page not found"} · Henna & Beauty Preview`;
     main.current?.focus();
   }, [pathname]);
   return (
     <>
-      <a className="skip-link" href="#main">
+      <a
+        className="skip-link"
+        href="#main"
+        onClick={(event) => {
+          event.preventDefault();
+          main.current?.focus();
+          main.current?.scrollIntoView();
+        }}
+      >
         Skip to content
       </a>
       <div className="preview-banner">
@@ -88,9 +96,7 @@ export default function Layout() {
           </div>
           <div>
             <h3>Plan your visit</h3>
-            <Link to="/appointments">
-              Appointments <span>Coming soon</span>
-            </Link>
+            <Link to="/appointments">Appointments</Link>
             <Link to="/queue">
               Walk-in queue <span>Coming soon</span>
             </Link>
