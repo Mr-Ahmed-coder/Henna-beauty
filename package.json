@@ -1,0 +1,26 @@
+{
+  "name": "henna-beauty-salon",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n web,api \"npm run dev -w client\" \"npm run dev -w server\"",
+    "build": "npm run build -w client",
+    "lint": "eslint .",
+    "test": "npm run test -w server"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "concurrently": "^9.2.0",
+    "eslint": "^9.39.0",
+    "eslint-plugin-react-hooks": "^7.0.0",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}
