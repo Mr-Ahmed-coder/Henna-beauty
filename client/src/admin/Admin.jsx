@@ -4,6 +4,8 @@ import "./admin.css";
 import AppointmentAdmin from "./AppointmentAdmin";
 import QueueAdmin from "./QueueAdmin";
 import OperationsDashboard from "./OperationsDashboard";
+import BusinessReports from "./BusinessReports";
+import NotificationSettings from "./NotificationSettings";
 const days = [
   "Sunday",
   "Monday",
@@ -307,6 +309,7 @@ export default function Admin() {
                 </button>
               ))}
               <span className="admin-tab-label">Manage salon</span>
+              {canEdit && <button aria-current={pane === "reports" ? "page" : undefined} onClick={() => changePane("reports")}>Reports</button>}
               {["services", "staff", "schedules", "hours"].map((item) => (
                 <button
                   key={item}
@@ -323,6 +326,8 @@ export default function Admin() {
             </nav>
             {pane === "dashboard" ? (
               <OperationsDashboard session={session} onOpen={changePane} />
+            ) : pane === "reports" && canEdit ? (
+              <BusinessReports />
             ) : pane === "queue" ? (
               <QueueAdmin session={session} />
             ) : pane === "appointments" ? (
@@ -334,13 +339,14 @@ export default function Admin() {
                   onSubmit={(event) => {
                     event.preventDefault();
                     perform(async () => {
-                      const { name, currency, timezone, hours } = settings;
+                      const { name, currency, timezone, hours, phone = "", email = "", address = "" } = settings;
                       setSettings(
                         await request("/settings", "PUT", {
                           name,
                           currency,
                           timezone,
                           hours,
+                          phone, email, address,
                         }),
                       );
                       setMessage("Business settings saved.");
@@ -348,6 +354,11 @@ export default function Admin() {
                   }}
                 >
                   <h2>Business hours & settings</h2>
+                  <p className="booking-note">Hours changes that conflict with future appointments are rejected. Timezone changes require reviewing future appointments and clearing active queue visits. Existing reservations retain their saved time, price, currency, and duration.</p>
+                  {canEdit && <div className="admin-actions">
+                    <button type="button" onClick={() => changePane("appointments")}>Appointment policies & qualifications</button>
+                    <button type="button" onClick={() => changePane("queue")}>Queue rules & grace periods</button>
+                  </div>}
                   {!settings._id && (
                     <p>
                       Suggested defaults — review and save to create salon
@@ -375,6 +386,8 @@ export default function Admin() {
                       />
                     </label>
                   ))}
+                  {[["phone", "Contact phone", "tel", 30], ["email", "Contact email", "email", 254], ["address", "Salon address", "text", 500]].map(([key, label, type, maxLength]) => <label key={key}>{label} (optional)<input type={type} maxLength={maxLength} disabled={!canEdit} value={settings[key] || ""} onChange={(event) => setSettings({ ...settings, [key]: event.target.value })} /></label>)}
+                  {canEdit && <NotificationSettings />}
                   <div className="hours-grid">
                     {settings.hours.map((hour, index) => (
                       <fieldset key={hour.day}>

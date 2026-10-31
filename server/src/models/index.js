@@ -89,6 +89,9 @@ export const Settings = mongoose.model(
       _id: { type: String, default: "salon" },
       name: text(),
       currency: { type: String, required: true, match: /^[A-Z]{3}$/ },
+      phone: { type: String, trim: true, maxlength: 30, default: "", validate: (value) => !value || /^\+?[0-9 ()-]{7,30}$/.test(value) },
+      email: { type: String, trim: true, maxlength: 254, default: "", validate: (value) => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) },
+      address: { type: String, trim: true, maxlength: 500, default: "" },
       timezone: text(),
       hours: {
         type: [period],

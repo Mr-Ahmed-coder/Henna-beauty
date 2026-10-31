@@ -1,0 +1,92 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import mongoose from "mongoose";
+import { DateTime } from "luxon";
+import { MongoMemoryReplSet } from "mongodb-memory-server";
+import { createApp } from "../src/app.js";
+import { Staff, Service, Settings, Schedule, initializeModels } from "../src/models/index.js";
+import { Appointment, ArtistProfile } from "../src/models/booking.js";
+import { QueueTicket } from "../src/models/queue.js";
+import { hashPassword } from "../src/security.js";
+import { reportPeriod, operationsMetrics } from "../src/reporting.js";
+
+test("reporting date boundaries, accurate metrics, permissions and safe persistent settings", async (t) => {
+  const mongo = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
+  await mongoose.connect(mongo.getUri());
+  await initializeModels();
+  const server = createApp().listen(0, "127.0.0.1");
+  await new Promise((resolve) => server.once("listening", resolve));
+  t.after(async () => { await new Promise((resolve) => server.close(resolve)); await mongoose.disconnect(); await mongo.stop(); });
+  const base = `http://127.0.0.1:${server.address().port}/api/admin`;
+  const password = "test-reporting-password";
+  const passwordHash = await hashPassword(password);
+  const [owner, desk, artist] = await Staff.create(["Admin", "Receptionist", "Artist"].map((role) => ({ name: role, email: `${role}@report.test`, role, passwordHash })));
+  async function api(path, { auth, method = "GET", body } = {}) {
+    const response = await fetch(base + path, { method, headers: { Origin: "http://127.0.0.1:5173", "Content-Type": "application/json", ...(auth ? { Cookie: auth.cookie, "X-CSRF-Token": auth.csrf } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
+    return { status: response.status, body: await response.json(), cookie: response.headers.get("set-cookie") };
+  }
+  async function login(person) {
+    const result = await api("/auth/login", { method: "POST", body: { email: person.email, password } });
+    assert.equal(result.status, 200);
+    return { cookie: result.cookie.split(";")[0], csrf: result.body.csrf };
+  }
+  const adminAuth = await login(owner), deskAuth = await login(desk), artistAuth = await login(artist);
+  const hours = Array.from({ length: 7 }, (_, day) => ({ day, closed: false, open: "00:00", close: "23:59" }));
+  await Settings.create({ name: "Reports salon", currency: "UGX", timezone: "Africa/Kampala", hours });
+  const service = await Service.create({ name: "Test service", priceMinor: 100, durationMinutes: 30 });
+  const day = DateTime.fromISO("2026-10-15T10:00", { zone: "Africa/Kampala" });
+  await Schedule.create({ staff: artist._id, day: day.weekday % 7, available: true, start: "09:00", end: "17:00" });
+  await ArtistProfile.create({ staff: artist._id, services: [service._id] });
+  const shared = { service: service._id, serviceName: service.name, priceMinor: 100, currency: "UGX", durationMinutes: 30, artist: artist._id, artistName: artist.name, timezone: "Africa/Kampala", customerName: "Private fixture", phone: "+256700000000", accessHash: "test" };
+  await Appointment.create(["Completed", "Cancelled", "No-Show"].map((status, index) => ({ ...shared, reference: `REPORT-${index}`, start: day.toJSDate(), end: day.plus({ minutes: 30 }).toJSDate(), status })));
+  await QueueTicket.create({ ...shared, reference: "QUEUE-REPORT", phoneHash: "test", number: 1, date: day.toISODate(), source: "Online", status: "Completed", active: false, createdAt: day.toJSDate(), startedAt: day.plus({ minutes: 20 }).toJSDate() });
+  assert.equal((await api("/reports")).status, 401);
+  assert.equal((await api("/reports", { auth: deskAuth })).status, 403);
+  assert.equal((await api("/reports", { auth: artistAuth })).status, 403);
+  const report = await api("/reports?period=daily&date=2026-10-15", { auth: adminAuth });
+  assert.equal(report.status, 200);
+  assert.equal(report.body.appointments, 3);
+  assert.equal(report.body.completedServices, 2);
+  assert.equal(report.body.averageWaitMinutes, 20);
+  assert.equal(report.body.waitSampleCount, 1);
+  assert.equal(report.body.services[0].appointments, 3);
+  assert.equal(report.body.staff[0].completed, 2);
+  for (const period of ["weekly", "monthly"]) {
+    const filtered = await api(`/reports?period=${period}&date=2026-10-15`, { auth: adminAuth });
+    assert.equal(filtered.body.appointments, 3);
+    assert.equal(filtered.body.queueVisits, 1);
+  }
+  assert.equal(JSON.stringify(report.body).includes("Private fixture"), false);
+  assert.equal((await api("/reports?period=yearly", { auth: adminAuth })).status, 400);
+  assert.equal((await api("/reports?date=2026-02-30", { auth: adminAuth })).status, 400);
+  assert.equal((await api("/reports?date=2026-10-16", { auth: adminAuth })).body.averageWaitMinutes, null);
+  const weekly = reportPeriod("weekly", "2026-10-15", "Africa/Kampala");
+  assert.equal(weekly.start.toISODate(), "2026-10-12");
+  assert.equal(weekly.end.toISODate(), "2026-10-19");
+  assert.equal(reportPeriod("monthly", "2026-12-31", "Africa/Kampala").end.toISODate(), "2027-01-01");
+  assert.equal(reportPeriod("daily", "2026-11-01", "America/New_York").end.diff(reportPeriod("daily", "2026-11-01", "America/New_York").start, "hours").hours, 25);
+  const metrics = await operationsMetrics(owner, day.toUTC());
+  assert.equal(metrics.artists[0].status, "Available");
+  assert.equal(metrics.completedServices, 2);
+  await Appointment.create({ ...shared, reference: "OCCUPIED", start: day.toJSDate(), end: day.plus({ minutes: 30 }).toJSDate(), status: "Confirmed" });
+  assert.equal((await operationsMetrics(owner, day.toUTC())).artists[0].status, "Occupied");
+  const settingsBody = { name: "Updated salon", currency: "UGX", timezone: "Africa/Kampala", hours, phone: "+256700000000", email: "salon@example.test", address: "Test address" };
+  assert.equal((await api("/settings", { auth: deskAuth, method: "PUT", body: settingsBody })).status, 403);
+  assert.equal((await api("/settings", { auth: adminAuth, method: "PUT", body: settingsBody })).status, 200);
+  assert.equal((await api("/settings", { auth: adminAuth })).body.address, "Test address");
+  assert.equal((await api("/settings", { auth: adminAuth, method: "PUT", body: { ...settingsBody, email: "invalid" } })).status, 400);
+  const future = DateTime.now().setZone("Africa/Kampala").plus({ days: 2 }).set({ hour: 10, minute: 0 });
+  await Appointment.create({ ...shared, reference: "FUTURE", start: future.toJSDate(), end: future.plus({ minutes: 30 }).toJSDate(), status: "Confirmed" });
+  assert.equal((await api("/settings", { auth: adminAuth, method: "PUT", body: { ...settingsBody, timezone: "UTC" } })).status, 409);
+  assert.equal((await api("/settings", { auth: adminAuth, method: "PUT", body: { ...settingsBody, hours: hours.map((hour) => ({ ...hour, closed: true })) } })).status, 409);
+  assert.equal((await Settings.findById("salon")).timezone, "Africa/Kampala");
+  await QueueTicket.create({ ...shared, reference: "ACTIVE-QUEUE", phoneHash: "other", number: 2, date: future.toISODate(), source: "Online", status: "Waiting", active: true });
+  assert.equal((await api("/settings", { auth: adminAuth, method: "PUT", body: { ...settingsBody, name: "Contact-only change" } })).status, 200);
+  assert.equal((await api("/settings", { auth: adminAuth, method: "PUT", body: { ...settingsBody, hours: hours.map((hour) => ({ ...hour, close: "23:30" })) } })).status, 409);
+  await mongoose.disconnect();
+  await mongoose.connect(mongo.getUri());
+  assert.equal((await Settings.findById("salon")).name, "Contact-only change");
+  assert.equal((await Appointment.findOne({ reference: "FUTURE" })).status, "Confirmed");
+  assert.equal((await api("/notification-settings", { auth: deskAuth })).status, 403);
+  assert.equal((await api("/notification-settings", { auth: adminAuth })).body.providers.sms.active, false);
+});

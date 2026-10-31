@@ -181,6 +181,11 @@
   gap: 14px;
   margin: 24px 0;
 }
+.report-panel { margin-top: 20px; min-width: 0; }
+.report-scroll { overflow-x: auto; max-width: 100%; }
+.report-scroll table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.report-scroll th, .report-scroll td { text-align: left; padding: 12px; border-bottom: 1px solid #ddcfc2; }
+.report-scroll th { font-weight: 600; }
 .operations-summary article,
 .operations-panel,
 .admin-guidance {

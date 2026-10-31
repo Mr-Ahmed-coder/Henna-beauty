@@ -3,6 +3,9 @@ import mongoose from "mongoose";
 import { rateLimit } from "express-rate-limit";
 import { appointmentAdminRouter } from "./booking.js";
 import { queueAdminRouter } from "./queue.js";
+import { businessReport, operationsMetrics } from "../reporting.js";
+import { saveBusinessSettings } from "../business-settings.js";
+import { providerConfiguration } from "../notification/providers.js";
 import {
   Staff,
   Session,
@@ -263,16 +266,22 @@ export function adminRouter({
   router.get("/settings", async (_req, res) =>
     res.json(await Settings.findById("salon")),
   );
+  router.get("/operations-metrics", async (req, res) => res.json(await operationsMetrics(req.staff)));
+  router.get("/reports", admin, async (req, res) =>
+    res.json(await businessReport({ period: req.query.period, date: req.query.date })),
+  );
+  router.get("/notification-settings", admin, (_req, res) => res.json({
+    providers: providerConfiguration(), reminderHours: 24, pollSeconds: 10,
+    message: "Preferences are controlled per private customer visit. External delivery requires approved activation.",
+  }));
   router.put("/settings", admin, async (req, res) => {
-    const body = fields(req.body, ["name", "currency", "timezone", "hours"]);
+    const body = fields(req.body, ["name", "currency", "timezone", "hours", "phone", "email", "address"]);
     try {
       new Intl.DateTimeFormat("en", { timeZone: body.timezone });
     } catch {
       fail(400, "Invalid timezone");
     }
-    const doc = (await Settings.findById("salon")) || new Settings();
-    doc.set(body);
-    await doc.save();
+    const doc = await saveBusinessSettings(body);
     res.json(doc);
   });
   router.get("/schedules", async (req, res) =>

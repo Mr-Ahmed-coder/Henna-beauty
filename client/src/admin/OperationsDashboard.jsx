@@ -8,11 +8,14 @@ export default function OperationsDashboard({ session, onOpen }) {
   const [appointments, setAppointments] = useState(null);
   const [setup, setSetup] = useState(null);
   const [error, setError] = useState("");
+  const { data: metrics, error: metricsError } = useQueuePolling("/api/admin/operations-metrics");
   const { data: queue, error: queueError } = useQueuePolling(
     "/api/admin/queue",
   );
   useEffect(() => {
     let active = true;
+    let timer;
+    function refresh() {
     Promise.all(
       [
         "/appointments?today=1",
@@ -27,11 +30,16 @@ export default function OperationsDashboard({ session, onOpen }) {
         if (active) {
           setAppointments(today);
           setSetup({ staff, schedules, profiles, services, settings });
+          setError("");
         }
       })
-      .catch((err) => active && setError(err.message));
+      .catch((err) => active && setError(err.message))
+      .finally(() => { if (active) timer = setTimeout(refresh, 10000); });
+    }
+    refresh();
     return () => {
       active = false;
+      clearTimeout(timer);
     };
   }, [session.staff.id]);
   const salonDay = queue
@@ -69,9 +77,9 @@ export default function OperationsDashboard({ session, onOpen }) {
         </div>
         {queue && <p>{queue.isOpen ? "Salon open" : "Salon closed"}</p>}
       </div>
-      {(error || queueError) && (
+      {(error || queueError || metricsError) && (
         <div className="admin-alert" role="alert">
-          {error || queueError}
+          {error || queueError || metricsError} Displayed information may be stale; refresh retries automatically.
         </div>
       )}
       {!appointments || !setup ? (
@@ -81,12 +89,12 @@ export default function OperationsDashboard({ session, onOpen }) {
           <div className="operations-summary">
             <article>
               <span>Today’s appointments</span>
-              <strong>{appointments.total}</strong>
+              <strong>{metrics?.appointments ?? appointments.total}</strong>
               <button onClick={() => onOpen("appointments")}>Open appointments</button>
             </article>
             <article>
               <span>Waiting queue</span>
-              <strong>{queue ? waiting.length : "—"}</strong>
+              <strong>{metrics?.waiting ?? (queue ? waiting.length : "—")}</strong>
               <button onClick={() => onOpen("queue")}>Open live queue</button>
             </article>
             <article>
@@ -100,6 +108,22 @@ export default function OperationsDashboard({ session, onOpen }) {
               <button onClick={() => onOpen("services")}>Manage catalogue</button>
             </article>
           </div>
+          <div className="operations-summary">
+            {[
+              ["Completed services today", metrics?.completedServices],
+              ["Cancelled appointments", metrics?.appointmentStatuses.Cancelled || 0],
+              ["Missed appointments", metrics?.appointmentStatuses["No-Show"] || 0],
+              ["Artists available now", metrics?.artists.filter((artist) => artist.status === "Available").length],
+              ["Artists occupied", metrics?.artists.filter((artist) => artist.status === "Occupied").length],
+              ["Average queue wait", metrics?.averageWaitMinutes === null ? "No samples" : metrics ? `${metrics.averageWaitMinutes} min` : "—"],
+            ].map(([label, value]) => <article key={label}><span>{label}</span><strong>{metrics ? value : "—"}</strong></article>)}
+          </div>
+          {metrics && <article className="operations-panel">
+            <h3>Artists right now</h3>
+            {!metrics.artists.length && <p>No active artists configured.</p>}
+            {metrics.artists.map((artist) => <div className="operations-row" key={artist.id}><strong>{artist.name}</strong><span>{artist.status}</span></div>)}
+            <p className="booking-note">Available means on shift, outside breaks, and without current appointment or queue occupancy. Service qualifications and full duration are checked when assigning. Average wait uses queue entry to service start ({metrics.waitSampleCount} recorded starts today).</p>
+          </article>}
           <div className="operations-grid">
             <article className="operations-panel">
               <div className="admin-section-title">
