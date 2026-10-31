@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { bookingModels } from "./booking.js";
+import { queueModels } from "./queue.js";
 const { Schema } = mongoose;
 const options = { timestamps: true, strict: "throw" };
 const text = (max = 120) => ({
@@ -124,8 +125,14 @@ export const Session = mongoose.model(
 );
 export async function initializeModels() {
   await Promise.all(
-    [Staff, Service, Schedule, Settings, Session, ...bookingModels].map((m) =>
-      m.init(),
-    ),
+    [
+      Staff,
+      Service,
+      Schedule,
+      Settings,
+      Session,
+      ...bookingModels,
+      ...queueModels,
+    ].map((m) => m.init()),
   );
 }

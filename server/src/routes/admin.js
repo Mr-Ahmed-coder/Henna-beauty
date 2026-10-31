@@ -2,6 +2,7 @@ import { Router } from "express";
 import mongoose from "mongoose";
 import { rateLimit } from "express-rate-limit";
 import { appointmentAdminRouter } from "./booking.js";
+import { queueAdminRouter } from "./queue.js";
 import {
   Staff,
   Session,
@@ -35,6 +36,7 @@ const id = (value) => {
 };
 export function adminRouter({
   origins,
+  queueClock,
   secureCookies = process.env.NODE_ENV === "production",
 } = {}) {
   const router = Router();
@@ -302,5 +304,6 @@ export function adminRouter({
     res.json({ ok: true });
   });
   router.use(appointmentAdminRouter());
+  router.use(queueAdminRouter({ clock: queueClock }));
   return router;
 }

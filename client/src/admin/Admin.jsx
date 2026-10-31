@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "./admin.css";
 import AppointmentAdmin from "./AppointmentAdmin";
+import QueueAdmin from "./QueueAdmin";
 const days = [
   "Sunday",
   "Monday",
@@ -284,21 +285,28 @@ export default function Admin() {
                   : "Read-only access to staff, services, hours, and schedules."}
             </p>
             <nav className="admin-tabs" aria-label="Administration">
-              {["staff", "services", "hours", "schedules", "appointments"].map(
-                (item) => (
-                  <button
-                    key={item}
-                    aria-current={pane === item ? "page" : undefined}
-                    onClick={() => changePane(item)}
-                  >
-                    {item === "staff" && session.staff.role === "Artist"
-                      ? "My account"
-                      : item}
-                  </button>
-                ),
-              )}
+              {[
+                "staff",
+                "services",
+                "hours",
+                "schedules",
+                "appointments",
+                "queue",
+              ].map((item) => (
+                <button
+                  key={item}
+                  aria-current={pane === item ? "page" : undefined}
+                  onClick={() => changePane(item)}
+                >
+                  {item === "staff" && session.staff.role === "Artist"
+                    ? "My account"
+                    : item}
+                </button>
+              ))}
             </nav>
-            {pane === "appointments" ? (
+            {pane === "queue" ? (
+              <QueueAdmin session={session} />
+            ) : pane === "appointments" ? (
               <AppointmentAdmin session={session} />
             ) : pane === "hours" ? (
               settings && (

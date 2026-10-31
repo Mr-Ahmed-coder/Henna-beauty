@@ -1,8 +1,10 @@
-# Henna & Beauty Salon — Phase 3
+# Henna & Beauty Salon — Phase 4
 
 A local MERN foundation for a single salon. React, Vite, Tailwind CSS, React Router, Express, and Mongoose. No deployment has been configured.
 
 Phase 3 adds live appointment booking at `/appointments` and appointment management under `/admin`. Booking requires MongoDB running as a replica set; setup and permissions are described below. The earlier phase sections record the foundation and its verification at that time.
+
+Phase 4 activates `/queue` for private online tickets and adds a combined online/walk-in queue in `/admin`. Queue operations use the same MongoDB replica set and transaction lock as appointments. No notification, payment, remote hosting, or Phase 5 feature is included.
 
 ## Run locally
 
@@ -60,7 +62,7 @@ Home, Services, About, and Contact are navigable and responsive, with reusable c
 
 All business identity, proposed services, hours, address, and contact details are placeholders or marked as awaiting confirmation. No invented testimonials or operational claims are included. Photographs are illustrative Unsplash images, not salon portfolio work; remote fonts are from Google Fonts. These require internet access. Replace them with approved brand assets and confirmed details before launch. Native font fallbacks are provided.
 
-The queue entry point remains an informational placeholder. Phase 3 replaces the appointment placeholder with the booking flow described below. Phase 4 requires explicit approval.
+Phase 3 replaces the appointment placeholder with booking; Phase 4 replaces the queue placeholder with the hybrid queue described below. Phase 5 requires explicit approval.
 
 ## Phase 1 verification
 
@@ -192,8 +194,91 @@ Models are in `server/src/models/booking.js`; availability/transactions in `serv
 
 Run `npm run lint`, `npm run test`, and `npm run build`. Phase 1/2 regression tests remain, alongside real replica-set booking integration tests for successful creation, database reconnect/API restart persistence, qualified artists and different service durations, breaks/hours/notice constraints, concurrent overlap conflicts and reschedule-versus-create races, cancellation rules, private-token access, authorization, search, approval, lifecycle transitions, daylight-saving repeated hours and spring gaps. Browser checks cover customer confirmation and refresh, mobile rescheduling, manual staff creation and status updates, booking-rule/profile saves, and responsive layouts at 1440 × 900 and 390 × 844. All browser records are disposable test data.
 
-Added runtime dependency: Luxon for timezone calculations. Atlas remains unverified without credentials. No remote, deployment, notification integration, or virtual queue was added. Phase 4 awaits approval.
+Added runtime dependency in Phase 3: Luxon for timezone calculations. Atlas remained unverified without credentials. No remote, deployment, notification integration, or virtual queue was added in Phase 3. Phase 4 queue behavior is described below.
 
 Final Phase 3 checks: lint and production build pass; all 10 reported tests pass. The production dependency audit (`npm audit --omit=dev`) reports zero vulnerabilities. The earlier development-tool audit findings are recorded in the Phase 2 notes. Browser verification also confirmed Pending approval status, inline cancellation, the cancelled slot becoming available again, and saving qualification/break profiles without horizontal overflow.
 
 Implementation references: [MongoDB transaction/write-conflict behavior](https://www.mongodb.com/docs/manual/core/transactions-production-consideration/), [Mongoose transactions](https://mongoosejs.com/docs/transactions.html), and [Luxon timezone APIs](https://moment.github.io/luxon/api-docs/).
+
+## Phase 4: hybrid virtual queue
+
+### Setup and customer tickets
+
+Use the same replica-set setup described in Phase 3. Active salon services, business hours, Artist qualifications, weekly shifts, and breaks must be configured first. Queue availability comes from the existing booking engine; there are no invented time slots or database fallbacks. No new dependencies or deployment settings were added.
+
+Customers open `/queue`, choose a service, and enter their name, international phone number including `+` and country code, and optional notes. An online entry starts as **Waiting**. Reception can use **Queue → Register walk-in** to create a physically present customer as **Checked In**. Both sources share one daily sequence and the same eligibility rules. No customer account is required.
+
+Each entry receives a daily number such as Q001, a unique random reference, and a separate 256-bit access token. Save the complete private link at `/queue/ticket#reference=…&token=…`. The token is stored only as a hash in MongoDB and is supplied through `X-Queue-Token`, never a query parameter. The reference alone cannot reveal a ticket. Customers can view only their own ticket and cancel it before service starts. The public catalog exposes active services and waiting counts, never names, phone numbers, or a customer list. Authorized staff see the combined queue; Artists see only tickets assigned to them.
+
+Phone formatting is normalized before hashing. A partial unique database index permits only one active ticket per international phone number, across online and walk-in sources. The shared transaction lock also serializes concurrent registrations. Cancelled, Completed, and Missed tickets release this constraint; a new entry goes to the back of the queue. The phone number is an identifier for duplicate prevention, not identity verification or a way to retrieve a private ticket. No private token recovery or notification system is provided.
+
+### Reception workflow and fair assignment
+
+1. Watch the combined board, or register an arriving walk-in.
+2. Choose any eligible Artist or a specific Artist, then **Call next eligible customer**. The server considers tickets in daily join order and calls the oldest ticket that can fit that Artist's current availability. An older ticket requiring an unavailable qualification or a longer free interval can be skipped while another eligible customer is served. Checking in does not change join order.
+3. For online customers who arrive, select **Check in customer**. An online customer can also check in before being called. Customer pages cannot self-certify physical arrival.
+4. Start a Called, physically checked-in customer only when the full service still fits. Complete the service when finished. Reception can cancel active tickets. Missed deadlines are applied automatically; the staff missed-turn action is accepted only after the deadline.
+
+Admin and Receptionist roles can register walk-ins, call/check in customers, and start/complete/cancel tickets. Artists can only start or complete their own assigned tickets. Only Admins edit queue rules. The existing staff session, CSRF protection, authentication, and other staff-management permissions are reused without role changes.
+
+### Arrival rules, hours, and status transitions
+
+Defaults in **Queue → Queue rules**:
+
+- Queue enabled, with online entries allowed.
+- Remote arrival window: 20 minutes after being called.
+- Arrival/start grace period: 5 minutes.
+- Stop new entries 30 minutes before salon closing.
+- Maximum 100 active tickets for the salon's current local date (configurable up to 200).
+
+Entries are accepted only while the salon is open, before the cutoff, below the active-ticket cap, and when a qualified Artist has some remaining interval for the service plus call buffer. The entry limit and a possible remaining interval do not guarantee service before closing; if the forecast cannot fit the ticket, the view explicitly shows no reliable estimate. Waiting customers should keep their private page open. Queue creation and deadlines use the salon's configured IANA timezone and real server time; customers cannot submit a date or clock override.
+
+An online customer not yet checked in gets an arrival/start deadline of call time + remote arrival window + grace. A checked-in customer gets call time + grace. Service must start before that deadline. Calling reserves the Artist for the full arrival/grace buffer plus the service duration, so a remote customer is not invited into an unprotected gap before an appointment. This conservative hold uses Artist capacity while the customer travels; configure the arrival window accordingly. Early check-in preserves the original deadline, and starting service replaces the hold with the actual start plus the saved service duration. Policy edits do not rewrite existing call deadlines.
+
+| Current status                 | Allowed next status / operation                                                                   |
+| ------------------------------ | ------------------------------------------------------------------------------------------------- |
+| Waiting                        | Checked In, Called, Cancelled; Missed at closing/day rollover                                     |
+| Checked In                     | Called, Cancelled; Missed at closing/day rollover                                                 |
+| Called                         | Record physical check-in without changing status; In Service, Cancelled, or Missed after deadline |
+| In Service                     | Completed, or Cancelled by Admin/Receptionist                                                     |
+| Completed / Cancelled / Missed | Terminal; no reopening                                                                            |
+
+Called tickets expire at their arrival/start deadline; Waiting, Checked In, and Called tickets expire at closing or the next salon day. Expiry is committed on the next queue read/action, and regular polling normally applies it within one refresh cycle. No background notification worker is required. An in-progress service is never silently expired at closing: it continues to occupy its Artist until staff completes or cancels it. Previous-day in-progress work remains visible on reception's board.
+
+### Appointment safety and wait estimates
+
+The queue calls the existing `availability()` service with internal immediate-service/notice/duration options. The default appointment-booking behavior remains intact. Eligibility therefore uses the same active services, staff roles, qualifications, shifts, salon hours, breaks, and appointment intervals. Pending and confirmed reservations retain their protected intervals, as do the other blocking appointment statuses from Phase 3.
+
+Queue calls, queue service starts, cancellations, completions, and appointment mutations share the same salon transaction lock and majority-committed MongoDB transactions. Called and In Service queue holds are included in appointment availability, so a new or rescheduled booking cannot overlap them. An appointment cannot enter In Service while its Artist still has an active queue assignment. Queue starts are revalidated immediately, including conflicts and current qualifications. A currently In Service appointment prevents immediate queue assignment to that Artist, even if staff started it early. No confirmed appointment is moved, cancelled, or shortened by the queue.
+
+Actual services can take longer than their configured duration. Overdue work is flagged and the Artist cannot be double-assigned; reception must finish or release that work before another service can start. The system cannot physically guarantee that an overrun finishes before an existing appointment, and it does not silently alter that appointment. Overdue queue work conservatively blocks new availability until resolved.
+
+Waiting positions count Waiting and Checked In customers in join order. Approximate waiting times estimate when a ticket could be called, not when the service will be completed. The forecast simulates earlier waiting tickets against qualified Artist gaps, appointments, breaks, arrival buffers, and current work; it does not reserve those forecast times. Different services may become eligible in a different order. No-fit or overdue cases show no reliable estimate instead of a fabricated duration.
+
+Forecasts use five-minute simulation steps to keep polling inexpensive; immediate assignment and service-start checks use the exact server instant. Ordinary queue reads do not take the booking write lock unless a ticket needs to expire.
+
+Customer and staff queue views poll automatically every 10 seconds using separate, cancellable requests, so changes appear across devices without a shared browser session. Errors are shown explicitly and any previously displayed data is identified as stale. Staff-side mutations refresh the board immediately. Queue API responses are `no-store`, and public requests have per-process limits of 180/minute and 20 new tickets/hour. These limits are suitable for the current single-process setup; the shared database lock and unique indexes enforce correctness across API instances.
+
+### Queue API and files
+
+| Endpoint                                    | Purpose                                                                        |
+| ------------------------------------------- | ------------------------------------------------------------------------------ |
+| `GET /api/queue/catalog`                    | Public active services, today's local date, rules, entry status, waiting count |
+| `POST /api/queue/tickets`                   | Online join with service, customerName, international phone, optional notes    |
+| `GET /api/queue/tickets/:reference`         | Private ticket, position, estimate, status; requires `X-Queue-Token`           |
+| `PATCH /api/queue/tickets/:reference`       | Customer `action: cancel`; requires private token                              |
+| `GET /api/admin/queue`                      | Authorized combined daily board (Artists: assigned tickets only)               |
+| `POST /api/admin/queue/tickets`             | Register and check in a physical walk-in                                       |
+| `POST /api/admin/queue/call-next`           | Assign oldest eligible customer; optional Artist ID                            |
+| `PATCH /api/admin/queue/tickets/:reference` | `check-in`, `start`, `complete`, `cancel`, or `missed`                         |
+| `GET/PUT /api/admin/queue-policy`           | Read rules; writes require Admin                                               |
+
+Source: `server/src/models/queue.js`, `server/src/queue/engine.js`, `server/src/routes/queue.js`, `client/src/queue/`, `client/src/admin/QueueAdmin.jsx`, and `server/test/queue.test.js`. Existing routing/model initialization gained queue mounts; the shared availability engine gained queue occupancy integration. Queue-related entry-point copy was activated in the existing public layout. Base public styles, authentication helpers, staff-management logic, and deployment settings remain unchanged.
+
+### Phase 4 verification
+
+`npm run lint`, `npm run test`, and `npm run build` pass. All 20 reported tests pass, including the Phase 1–3 regressions and real isolated MongoDB replica-set queue integration tests. Queue tests cover online/walk-in creation, normalized duplicate prevention, private access, ordering/estimates, qualification and break eligibility, protected appointments, concurrent calls across multiple Artists, appointment-versus-queue races, arrival/grace deadlines, missed turns, service lifecycle and overruns, operating hours/cutoff/closing, authorization, and API-restart/database-reconnect persistence. No Atlas integration is claimed.
+
+Browser checks at 1440 × 900 and 390 × 844 verified online join, walk-in registration, two simultaneous Artist assignments, physical check-in, service start/completion, saving queue rules, private-ticket refresh, and automatic status synchronization between two independently loaded ticket views. Responsive pages fit without horizontal overflow. Preview data and credentials are disposable and are not seeded into the salon database. No SMS, WhatsApp, push notifications, payment processing, remote, deployment, or Phase 5 functionality was added.
+
+Database references: [MongoDB partial unique indexes](https://www.mongodb.com/docs/manual/core/index-unique/) and [transaction/write-conflict behavior](https://www.mongodb.com/docs/v8.3/core/transactions-production-consideration/).

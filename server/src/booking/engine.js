@@ -9,6 +9,7 @@ import {
   BookingLock,
 } from "../models/booking.js";
 import { digest, randomToken } from "../security.js";
+import { QueueTicket } from "../models/queue.js";
 export const fail = (status, message) => {
   throw Object.assign(new Error(message), { status });
 };
@@ -80,6 +81,7 @@ export async function availability(
   session = null,
   exclude = null,
   now = DateTime.utc(),
+  options = {},
 ) {
   const { settings, policy } = await configuration(session);
   if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date))
@@ -129,6 +131,15 @@ export async function availability(
     end: { $gt: day.toJSDate() },
     ...(exclude ? { _id: { $ne: exclude } } : {}),
   }).session(session);
+  // Queue holds share this availability calculation and the same transaction lock.
+  const queueHolds = await QueueTicket.find({
+    $or: [
+      { status: "Called", deadlineAt: { $gt: now.toJSDate() } },
+      { status: "In Service" },
+    ],
+    ...(options.excludeQueue ? { _id: { $ne: options.excludeQueue } } : {}),
+  }).session(session);
+  const duration = options.durationMinutes ?? service.durationMinutes;
   for (const person of artists) {
     const profile = profiles.find(
         (p) => String(p.staff) === String(person._id),
@@ -146,14 +157,27 @@ export async function availability(
         settings.timezone,
       );
     if (!open || !close) continue;
+    if (options.instant && (options.instant < open || options.instant >= close))
+      continue;
     // Iterate real instants, preserving both offsets in a daylight-saving repeated hour.
     for (
-      let start = open;
-      start.plus({ minutes: service.durationMinutes }) <= close;
-      start = start.plus({ minutes: policy.slotIntervalMinutes })
+      let start =
+        options.instant || (options.fromNow && now > open ? now : open);
+      start.plus({ minutes: duration }) <= close;
+      start = options.instant
+        ? close.plus({ minutes: 1 })
+        : start.plus({
+            minutes: options.slotIntervalMinutes ?? policy.slotIntervalMinutes,
+          })
     ) {
-      const end = start.plus({ minutes: service.durationMinutes });
-      if (start < now.plus({ minutes: policy.minimumNoticeMinutes })) continue;
+      const end = start.plus({ minutes: duration });
+      if (
+        start <
+        now.plus({
+          minutes: options.minimumNoticeMinutes ?? policy.minimumNoticeMinutes,
+        })
+      )
+        continue;
       const pauses = profile.breaks.filter((b) => b.day === day.weekday % 7);
       if (
         pauses.some((b) => {
@@ -164,6 +188,19 @@ export async function availability(
             ends = to.getPossibleOffsets();
           return starts.some((s) => ends.some((e) => start < e && end > s));
         })
+      )
+        continue;
+      if (
+        queueHolds.some(
+          (hold) =>
+            String(hold.artist) === String(person._id) &&
+            start.toMillis() <
+              (hold.status === "In Service" &&
+              hold.end.getTime() <= now.toMillis()
+                ? day.plus({ days: 1 }).toMillis()
+                : hold.end.getTime()) &&
+            end.toMillis() > hold.start.getTime(),
+        )
       )
         continue;
       if (
@@ -346,6 +383,20 @@ export async function changeReservation(
       });
     } else if (body.action === "status") {
       const status = body.status;
+      if (
+        status === "In Service" &&
+        (await QueueTicket.exists({
+          artist: doc.artist,
+          $or: [
+            { status: "In Service" },
+            { status: "Called", deadlineAt: { $gt: new Date() } },
+          ],
+        }).session(session))
+      )
+        fail(
+          409,
+          "This artist has an active queue assignment. Finish or release it before starting the appointment.",
+        );
       if (!staff && status !== "Cancelled")
         fail(403, "Customers may only cancel their reservation");
       if (

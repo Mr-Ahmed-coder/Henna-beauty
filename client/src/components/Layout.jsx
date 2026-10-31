@@ -19,7 +19,7 @@ export default function Layout() {
   const main = useRef(null);
   useEffect(() => {
     window.scrollTo(0, 0);
-    document.title = `${pathname.startsWith("/appointments") ? "Appointments" : { "/": "Home", "/services": "Services", "/about": "About", "/contact": "Contact", "/queue": "Queue" }[pathname] || "Page not found"} · Henna & Beauty Preview`;
+    document.title = `${pathname.startsWith("/appointments") ? "Appointments" : pathname.startsWith("/queue") ? "Queue" : { "/": "Home", "/services": "Services", "/about": "About", "/contact": "Contact" }[pathname] || "Page not found"} · Henna & Beauty Preview`;
     main.current?.focus();
   }, [pathname]);
   return (
@@ -97,9 +97,7 @@ export default function Layout() {
           <div>
             <h3>Plan your visit</h3>
             <Link to="/appointments">Appointments</Link>
-            <Link to="/queue">
-              Walk-in queue <span>Coming soon</span>
-            </Link>
+            <Link to="/queue">Today’s queue</Link>
             <p>Hours & location to be confirmed.</p>
           </div>
         </div>

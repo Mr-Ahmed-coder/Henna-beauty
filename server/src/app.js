@@ -3,9 +3,11 @@ import cors from "cors";
 import helmet from "helmet";
 import { adminRouter } from "./routes/admin.js";
 import { bookingRouter } from "./routes/booking.js";
+import { queueRouter } from "./routes/queue.js";
 export function createApp({
   origins = ["http://localhost:5173", "http://127.0.0.1:5173"],
   databaseStatus = () => "not-configured",
+  queueClock,
 } = {}) {
   const app = express();
   app.disable("x-powered-by");
@@ -19,8 +21,9 @@ export function createApp({
       database: databaseStatus(),
     }),
   );
-  app.use("/api/admin", adminRouter({ origins }));
+  app.use("/api/admin", adminRouter({ origins, queueClock }));
   app.use("/api/booking", bookingRouter({ origins }));
+  app.use("/api/queue", queueRouter({ origins, clock: queueClock }));
   app.use((_req, res) => res.status(404).json({ error: "Endpoint not found" }));
   app.use((err, _req, res, _next) =>
     res

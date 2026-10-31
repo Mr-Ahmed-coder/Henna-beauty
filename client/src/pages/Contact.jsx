@@ -57,18 +57,18 @@ export default function Contact() {
             is <em>on the way.</em>
           </h2>
           <p>
-            Reserve an appointment online. The walk-in queue is planned for a
-            future phase and is not accepting entries yet.
+            Reserve an appointment online, join today’s queue from home, or ask
+            reception to register your walk-in visit.
           </p>
           <Link className="button" to="/appointments">
             Book an appointment <ArrowUpRight size={17} />
           </Link>
           <Link className="text-link" to="/queue">
-            About the walk-in queue <ArrowUpRight size={17} />
+            Join today’s queue <ArrowUpRight size={17} />
           </Link>
           <p className="fine-print">
-            No contact form is active. Reservation details are collected only
-            during appointment booking.
+            No contact form is active. Customer details are collected only for
+            appointment reservations and queue tickets.
           </p>
         </aside>
       </section>

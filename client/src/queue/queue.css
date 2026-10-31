@@ -1,0 +1,93 @@
+.queue-status {
+  font-family: "Playfair Display", serif;
+  color: #482735;
+  font-size: 26px !important;
+}
+.queue-board-card {
+  padding: 24px;
+  background: #fffaf3;
+  border: 1px solid #ddc8bc;
+  margin: 18px 0;
+  overflow-wrap: anywhere;
+}
+.queue-board-card h3 {
+  font-size: 23px;
+}
+.queue-board-card p {
+  white-space: pre-wrap;
+}
+.queue-board-tools {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 22px 0;
+}
+.queue-board-tools select {
+  border: 1px solid #bca897;
+  background: #fffaf3;
+  color: #482735;
+  padding: 10px;
+  max-width: 100%;
+  min-height: 44px;
+}
+.queue-policy-form {
+  display: grid;
+  gap: 17px;
+  margin-block: 25px;
+  max-width: 700px;
+}
+.queue-policy-form label {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+.queue-policy-form input:not([type="checkbox"]) {
+  padding: 11px;
+  border: 1px solid #bca897;
+  background: #fffaf3;
+  color: #482735;
+  min-height: 44px;
+  max-width: 100%;
+}
+.queue-policy-form input[type="checkbox"] {
+  width: 19px;
+  height: 19px;
+  accent-color: #482735;
+}
+.queue-ui dl {
+  overflow-wrap: anywhere;
+}
+.queue-ui button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.queue-overdue {
+  border-left: 3px solid #9b354e;
+  background: #f4dddd;
+  padding: 15px;
+  color: #702039;
+}
+.queue-board-card .booking-actions {
+  margin-top: 15px;
+}
+@media (max-width: 650px) {
+  .queue-board-card {
+    padding: 20px;
+  }
+  .queue-board-tools {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .queue-board-tools > * {
+    width: 100%;
+    min-width: 0;
+  }
+  .queue-policy-form label {
+    align-items: start;
+  }
+  .queue-policy-form input:not([type="checkbox"]) {
+    width: 100%;
+  }
+}

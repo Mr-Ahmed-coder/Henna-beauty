@@ -4,7 +4,7 @@ import Home from "./pages/Home";
 import Services from "./pages/Services";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
-import ComingSoon from "./pages/ComingSoon";
+import QueuePage from "./queue/QueuePage";
 import Admin from "./admin/Admin";
 import BookingPage from "./booking/BookingPage";
 export default function App() {
@@ -17,7 +17,7 @@ export default function App() {
         <Route path="about" element={<About />} />
         <Route path="contact" element={<Contact />} />
         <Route path="appointments/*" element={<BookingPage />} />
-        <Route path="queue" element={<ComingSoon queue />} />
+        <Route path="queue/*" element={<QueuePage />} />
         <Route
           path="*"
           element={

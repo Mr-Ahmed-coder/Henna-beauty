@@ -24,7 +24,7 @@ export function VisitCTA() {
         <p>
           Reserve your next salon visit online.
           <br />
-          The walk-in queue is coming in a future phase.
+          Or join today’s queue and follow your private ticket.
         </p>
         <div className="actions">
           <Link className="button light" to="/appointments">
