@@ -1,4 +1,8 @@
-# Henna & Beauty Salon — Phase 6
+# Henna & Beauty Salon — Phase 7
+
+Production preparation and launch conditions are in [DEPLOYMENT.md](DEPLOYMENT.md). The security review, automated coverage, and pending desktop/tablet/mobile manual checklist are in [QA.md](QA.md). Readiness is **Ready with Conditions**; no deployment, production migration, or Git remote change has been performed.
+
+Start the API with `npm start` from the repository root. Production requires injected `NODE_ENV=production`, `MONGODB_URI`, and an exact HTTPS `CLIENT_ORIGIN`; see the credential-free `server/.env.production.example`. Production deliberately does not load the local development `.env`. Serve the compiled frontend separately under the same HTTPS origin as `/api`.
 
 A local MERN foundation for a single salon. React, Vite, Tailwind CSS, React Router, Express, and Mongoose. No deployment has been configured.
 

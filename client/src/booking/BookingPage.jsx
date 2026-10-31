@@ -231,7 +231,7 @@ export default function BookingPage() {
                   onPreferenceChange={savePreferences}
                 />
               </div>
-              {reschedule && (
+              {reschedule && ["Pending", "Confirmed"].includes(details.status) && (
                 <BookingForm
                   key={details.updatedAt}
                   reservation={details}
@@ -253,7 +253,7 @@ export default function BookingPage() {
             <p role="status">
               {!reference || !token
                 ? "Open the full private access link issued with your reservation."
-                : error
+                : error || pollError
                   ? "Unable to load this reservation."
                   : "Loading your reservation…"}
             </p>

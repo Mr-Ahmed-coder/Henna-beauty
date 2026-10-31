@@ -728,6 +728,11 @@ test("appointment booking integration", async (t) => {
         409,
       );
       const count = await Appointment.countDocuments();
+      const reportDate = DateTime.fromJSDate(current.start).setZone(current.timezone).toISODate();
+      const completedReport = await api("/api/admin/reports?" + new URLSearchParams({ period: "daily", date: reportDate }), { auth: adminAuth });
+      assert.equal(completedReport.status, 200);
+      assert.ok(completedReport.data.completedServices >= 1);
+      assert.ok(completedReport.data.staff.some((person) => person.completed >= 1));
       await new Promise((r) => server.close(r));
       await mongoose.disconnect();
       await mongoose.connect(mongo.getUri());

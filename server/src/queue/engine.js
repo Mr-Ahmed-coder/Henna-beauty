@@ -287,7 +287,11 @@ export async function getQueueSnapshot({
           null,
           { forecast: true },
         );
-        return { ...service.toObject(), bookable: slots.length > 0 };
+        const walkInSlots = await candidates(
+          { service: service._id, durationMinutes: service.durationMinutes, checkedInAt: context.now.toJSDate() },
+          context, null, { forecast: true },
+        );
+        return { ...service.toObject(), bookable: slots.length > 0, walkInBookable: walkInSlots.length > 0 };
       } catch (err) {
         if (err.status === 404) return { ...service.toObject(), bookable: false };
         throw err;

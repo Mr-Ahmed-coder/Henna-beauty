@@ -5,18 +5,19 @@ import { createApp } from "./app.js";
 import { connectDatabase, databaseReadiness } from "./config/database.js";
 import { initializeModels } from "./models/index.js";
 import { processDueNotifications } from "./notification/engine.js";
-dotenv.config({
+import { runtimeConfiguration } from "./config/runtime.js";
+if (process.env.NODE_ENV !== "production") dotenv.config({
   path: fileURLToPath(new URL("../.env", import.meta.url)),
   quiet: true,
 });
-const port = Number(process.env.PORT || 5000);
-if (!Number.isInteger(port) || port < 1 || port > 65535)
-  throw new Error("PORT must be an integer between 1 and 65535");
 try {
+  const { port, host, origins, trustProxy, production } = runtimeConfiguration();
   await connectDatabase(process.env.MONGODB_URI);
   if (process.env.MONGODB_URI) await initializeModels();
   if (process.env.MONGODB_URI) {
     const readiness = await databaseReadiness();
+    if (production && !readiness.bookingsReady)
+      throw new Error("Production requires a writable MongoDB replica set");
     console.log(
       `Database: ${readiness.database}; replica set: ${readiness.replicaSet || "none"}; booking/queue readiness: ${readiness.bookingsReady ? "ready" : "unavailable"}.`,
     );
@@ -30,7 +31,8 @@ try {
     ),
   );
   const app = createApp({
-    origins: process.env.CLIENT_ORIGIN?.split(",").map((value) => value.trim()),
+    origins,
+    trustProxy,
     databaseStatus: () =>
       !process.env.MONGODB_URI
         ? "not-configured"
@@ -38,8 +40,8 @@ try {
           ? "connected"
           : "disconnected",
   });
-  const server = app.listen(port, "127.0.0.1", () =>
-    console.log(`Salon API: http://127.0.0.1:${port}/api/health`),
+  const server = app.listen(port, host, () =>
+    console.log(`Salon API listening on port ${port}; health: /api/health`),
   );
   const notificationTimer = process.env.MONGODB_URI
     ? setInterval(() => {

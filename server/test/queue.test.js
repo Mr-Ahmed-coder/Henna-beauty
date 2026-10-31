@@ -360,6 +360,10 @@ test("hybrid queue integration on a real isolated replica set", async (t) => {
         200,
       );
       assert.equal((await privateView(first)).data.ticket.status, "Completed");
+      const completedReport = await api("/api/admin/reports?" + new URLSearchParams({ period: "daily", date: initial.toISODate() }), { auth: admin });
+      assert.equal(completedReport.status, 200);
+      assert.equal(completedReport.data.queueStatuses.Completed, 1);
+      assert.equal(completedReport.data.completedServices, 1);
       assert.equal((await change(first.ticket, "start", artistA)).status, 409);
     },
   );
@@ -535,4 +539,13 @@ test("hybrid queue integration on a real isolated replica set", async (t) => {
       assert.equal(res.data.ticket.position, 1);
     },
   );
+  await t.test("walk-in catalogue preserves eligible services when remote arrival buffer no longer fits", async () => {
+    clock = initial.set({ hour: 16, minute: 20 });
+    const catalogue = await api("/api/queue/catalog");
+    const service = catalogue.data.services.find((item) => item._id === String(short._id));
+    assert.equal(service.bookable, false);
+    assert.equal(service.walkInBookable, true);
+    assert.equal((await join("online")).status, 409);
+    assert.equal((await join("walk-in")).status, 201);
+  });
 });

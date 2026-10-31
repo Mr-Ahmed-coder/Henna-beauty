@@ -9,8 +9,10 @@ export function createApp({
   origins = ["http://localhost:5173", "http://127.0.0.1:5173"],
   databaseStatus = () => "not-configured",
   queueClock,
+  trustProxy = 0,
 } = {}) {
   const app = express();
+  app.set("trust proxy", trustProxy);
   app.disable("x-powered-by");
   app.use(helmet());
   app.use(cors({ origin: origins, credentials: true }));
@@ -38,6 +40,8 @@ export function createApp({
       .status(
         err.code === 11000
           ? 409
+          : err.type === "entity.parse.failed" ? 400
+          : err.type === "entity.too.large" ? 413
           : err.name === "ValidationError" ||
               err.name === "StrictModeError" ||
               err.name === "CastError"
@@ -50,6 +54,8 @@ export function createApp({
         error:
           err.code === 11000
             ? "An account or schedule with these details already exists"
+            : err.type === "entity.parse.failed" ? "Invalid JSON request body"
+            : err.type === "entity.too.large" ? "Request body is too large"
             : err.name === "ValidationError" ||
                 err.name === "StrictModeError" ||
                 err.name === "CastError"
