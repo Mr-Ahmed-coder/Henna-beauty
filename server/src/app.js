@@ -4,6 +4,7 @@ import helmet from "helmet";
 import { adminRouter } from "./routes/admin.js";
 import { bookingRouter } from "./routes/booking.js";
 import { queueRouter } from "./routes/queue.js";
+import { databaseReadiness } from "./config/database.js";
 export function createApp({
   origins = ["http://localhost:5173", "http://127.0.0.1:5173"],
   databaseStatus = () => "not-configured",
@@ -21,6 +22,13 @@ export function createApp({
       database: databaseStatus(),
     }),
   );
+  app.get("/api/ready", async (_req, res) => {
+    const readiness = await databaseReadiness();
+    res
+      .set("Cache-Control", "no-store")
+      .status(readiness.bookingsReady ? 200 : 503)
+      .json(readiness);
+  });
   app.use("/api/admin", adminRouter({ origins, queueClock }));
   app.use("/api/booking", bookingRouter({ origins }));
   app.use("/api/queue", queueRouter({ origins, clock: queueClock }));

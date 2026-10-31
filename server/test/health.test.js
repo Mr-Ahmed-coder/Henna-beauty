@@ -17,6 +17,9 @@ test("API reports health, restricts CORS and exposes no booking endpoints", asyn
   });
   assert.equal(response.headers.get("access-control-allow-origin"), null);
   assert.equal(response.headers.get("x-powered-by"), null);
+  const ready = await fetch(`${url}/api/ready`);
+  assert.equal(ready.status, 503);
+  assert.equal((await ready.json()).bookingsReady, false);
   for (const route of ["appointments", "queue", "payments", "auth"])
     assert.equal(
       (await fetch(`${url}/api/${route}`, { method: "POST" })).status,

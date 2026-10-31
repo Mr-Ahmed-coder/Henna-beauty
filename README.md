@@ -1,4 +1,4 @@
-# Henna & Beauty Salon — Phase 4
+# Henna & Beauty Salon — Phase 4B
 
 A local MERN foundation for a single salon. React, Vite, Tailwind CSS, React Router, Express, and Mongoose. No deployment has been configured.
 
@@ -16,15 +16,17 @@ Copy-Item server/.env.example server/.env
 npm run dev
 ```
 
-Frontend: http://127.0.0.1:5173. API health: http://127.0.0.1:5000/api/health. Both servers bind to loopback for local development. Stop with Ctrl+C.
+Frontend: http://127.0.0.1:5173. API health: http://127.0.0.1:5000/api/health. Booking readiness: http://127.0.0.1:5000/api/ready. Both servers bind to loopback for local development. Stop with Ctrl+C.
 
 You can also start each workspace separately with `npm run dev -w client` and `npm run dev -w server`. The Vite development server proxies `/api` requests to port 5000. If changing the backend port, update the proxy in `client/vite.config.js` too.
 
 ## MongoDB Atlas configuration
 
-Set `MONGODB_URI` in the ignored `server/.env` to your Atlas connection string, including a database name, for example `mongodb+srv://<user>:<encoded-password>@<cluster>/salon`. Replace placeholders locally. Configure an Atlas database user and network access for your development IP. Never put this URI in client code or a `VITE_` variable.
+`npm run dev` now provides a persistent, loopback-only development replica set automatically when `MONGODB_URI` is unset or is the default value in `.env.example`. It listens only on `127.0.0.1:27027`, stores development data in ignored `server/.local/mongodb`, and uses replica-set name `salon-dev`; booking and queue transactions therefore work locally. The data survives normal development restarts. `npm run dev:db -w server` runs just that local database when needed.
 
-An empty URI intentionally starts the API without a database; health reports `not-configured`. When a URI is supplied, startup requires a successful connection and health reports its current state. Startup failures omit connection credentials from logs. Live Atlas connectivity requires your own credentials and has not been verified.
+To use Atlas or an existing replica set instead, set `MONGODB_URI` in the ignored `server/.env` to its connection string, including a database name, for example `mongodb+srv://<user>:<encoded-password>@<cluster>/salon`. Replace placeholders locally. Configure an Atlas database user and network access for your development IP. Never put this URI in client code or a `VITE_` variable. Supplying another URI skips the local launcher.
+
+`/api/health` exposes the general database connection state; `/api/ready` returns HTTP 200 only when the connected database can support booking/queue transactions and HTTP 503 otherwise. Direct `npm run start -w server` with no URI remains public-site-only and reports `not-configured`. When a URI is supplied, startup requires a successful connection; startup failures omit connection credentials from logs. Live Atlas connectivity requires your own credentials and has not been verified.
 
 `PORT` defaults to 5000. `CLIENT_ORIGIN` is a comma-separated browser origin allowlist. No secrets are needed by the frontend. `.env` files are ignored; only the example is tracked.
 
@@ -81,7 +83,7 @@ Visit `/admin` directly. Public pages and appointment/queue placeholders remain 
 
 ### Database and initial administrator
 
-Install and start your own local MongoDB, then set `MONGODB_URI=mongodb://127.0.0.1:27017/salon` in `server/.env`, or use an Atlas URI. Data persists in that database. No production data or staff accounts are seeded automatically. With no database, public pages and health continue to work; administration returns 503.
+Use `npm run dev` for the default local replica set, or set `MONGODB_URI` to Atlas/an existing MongoDB. Data persists in the selected database. No production data or staff accounts are seeded automatically. With no database, public pages and health continue to work; administration returns 503.
 
 Set the initial administrator through local environment variables and the one-time command, never a public setup endpoint. In PowerShell:
 
@@ -139,7 +141,7 @@ Security references: [Express security guidance](https://expressjs.com/advanced/
 
 Appointments use MongoDB transactions. Atlas supports these, and local development needs a replica set rather than a standalone `mongod`. Existing staff administration continues to work on standalone MongoDB, but booking returns a clear 503 until transaction support is available. No booking data or availability is fabricated when the database is missing.
 
-For a local single-node development replica set, start your installed MongoDB with `mongod --replSet rs0 --bind_ip 127.0.0.1 --dbpath <your-existing-local-data-directory>`, then run `rs.initiate()` once in `mongosh`. Use `MONGODB_URI=mongodb://127.0.0.1:27017/salon?replicaSet=rs0` in the ignored `server/.env`. Choose a data directory outside the source checkout. This is local setup only; no hosting or deployment configuration is supplied. The integration tests provision and remove their own isolated replica set automatically and never read your salon database URI.
+`npm run dev` starts a persistent local single-node replica set by default. If you prefer to manage MongoDB yourself, start it with `mongod --replSet rs0 --bind_ip 127.0.0.1 --dbpath <your-existing-local-data-directory>`, run `rs.initiate()` once in `mongosh`, and use `MONGODB_URI=mongodb://127.0.0.1:27017/salon?replicaSet=rs0` in the ignored `server/.env`. This is local setup only; no hosting or deployment configuration is supplied. The integration tests provision and remove their own isolated replica set automatically and never read your salon database URI.
 
 ### Prepare real availability
 

@@ -6,3 +6,4 @@ dist/
 coverage/
 *.log
 artifacts/
+server/.local/
