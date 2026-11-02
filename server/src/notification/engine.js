@@ -27,7 +27,8 @@ export function validatePreferences(value) {
 function localTime(value, timezone) {
   return DateTime.fromJSDate(new Date(value), { zone: "utc" })
     .setZone(timezone)
-    .toFormat("cccc, d LLL at h:mm a");
+    .setLocale("en-US")
+    .toFormat("cccc, LLL d 'at' h:mm a ZZZZ");
 }
 
 function appointmentCopy(event, appointment) {

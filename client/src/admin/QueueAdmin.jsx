@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { queueApi, useQueuePolling } from "../queue/api";
 import JoinQueue from "../queue/JoinQueue";
 import { formatTime } from "../booking/api";
+import { calendarDate } from "../localization";
 function PolicyForm({ session }) {
   const [policy, setPolicy] = useState(null),
     [error, setError] = useState(""),
@@ -258,7 +259,7 @@ export default function QueueAdmin({ session }) {
       ) : (
         <>
           <p>
-            {data.date} · {data.timezone} · {data.waitingCount} waiting ·{" "}
+            {calendarDate(data.date)} · {data.timezone} · {data.waitingCount} waiting ·{" "}
             {data.isOpen ? "Salon open" : "Salon closed"}
           </p>
           <p className="booking-note">

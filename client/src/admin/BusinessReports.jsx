@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { bookingApi } from "../booking/api";
+import { calendarDate } from "../localization";
 
 export default function BusinessReports() {
   const [period, setPeriod] = useState("daily"), [date, setDate] = useState("");
@@ -22,7 +23,7 @@ export default function BusinessReports() {
     </div>
     {error && <p className="admin-alert" role="alert">{error}</p>}
     {loading ? <p role="status">Loading report…</p> : !error && data && <>
-      <p>{data.start} to {data.endExclusive} (end exclusive) · {data.timezone}</p>
+      <p>{calendarDate(data.start)} to {calendarDate(data.endExclusive)} (end exclusive) · {data.timezone}</p>
       <p className="booking-note">Appointments are grouped by scheduled start; queue visits by ticket date. Current statuses are shown. Average wait measures queue entry to service start, including travel for remote customers. Revenue is unavailable because payments are not recorded.</p>
       <div className="operations-summary">{[["Appointments", data.appointments], ["Queue visits", data.queueVisits], ["Completed services", data.completedServices], ["Average queue wait", data.averageWaitMinutes === null ? "No samples" : `${data.averageWaitMinutes} min`]].map(([label, value]) => <article key={label}><span>{label}</span><strong>{value}</strong></article>)}</div>
       {!data.appointments && !data.queueVisits && <p>No visits recorded in this period.</p>}
@@ -30,7 +31,7 @@ export default function BusinessReports() {
       {[["Most-booked services", data.services], ["Staff workload", data.staff]].map(([title, rows]) => <section key={title} className="operations-panel report-panel"><h3>{title}</h3>
         {!rows.length ? <p>No records.</p> : <div className="report-scroll"><table><thead><tr><th>Name</th><th>Appointments</th><th>Queue visits</th><th>Completed</th><th>Allocated minutes</th></tr></thead><tbody>{rows.map((row) => <tr key={row.id}><th>{row.name || "Former artist"}</th><td>{row.appointments}</td><td>{row.queueVisits}</td><td>{row.completed}</td><td>{row.scheduledMinutes}</td></tr>)}</tbody></table></div>}
       </section>)}
-      <section className="operations-panel report-panel"><h3>Queue waiting-time trend</h3><div className="report-scroll"><table><thead><tr><th>Day</th><th>Tickets</th><th>Recorded starts</th><th>Average wait</th></tr></thead><tbody>{data.trend.map((day) => <tr key={day.date}><th>{day.date}</th><td>{day.queueVisits}</td><td>{day.served}</td><td>{day.averageWaitMinutes === null ? "—" : `${day.averageWaitMinutes} min`}</td></tr>)}</tbody></table></div></section>
+      <section className="operations-panel report-panel"><h3>Queue waiting-time trend</h3><div className="report-scroll"><table><thead><tr><th>Day</th><th>Tickets</th><th>Recorded starts</th><th>Average wait</th></tr></thead><tbody>{data.trend.map((day) => <tr key={day.date}><th>{calendarDate(day.date)}</th><td>{day.queueVisits}</td><td>{day.served}</td><td>{day.averageWaitMinutes === null ? "—" : `${day.averageWaitMinutes} min`}</td></tr>)}</tbody></table></div></section>
       <p className="booking-note">Allocated minutes exclude cancelled, missed, and no-show visits. They represent configured durations, not measured working time. Waiting averages use {data.waitSampleCount} recorded service starts.</p>
     </>}
   </section>;

@@ -18,21 +18,7 @@ export async function bookingApi(
     throw new Error(data.error || "The request could not be completed");
   return data;
 }
-export function formatTime(value, timezone) {
-  return new Intl.DateTimeFormat("en", {
-    timeZone: timezone,
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
-export function money(value, currency) {
-  const formatter = new Intl.NumberFormat("en", {
-    style: "currency",
-    currency,
-  });
-  const digits = formatter.resolvedOptions().maximumFractionDigits;
-  return formatter.format(value / 10 ** digits);
-}
+export { formatTime, money } from "../localization";
 import { useEffect, useState } from "react";
 export function useBookingPolling(path, token, revision = 0) {
   const [data, setData] = useState(null),

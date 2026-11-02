@@ -271,9 +271,11 @@ header {
   position: absolute;
   bottom: 10px;
   right: 15px;
-  font-size: 9px;
-  color: white;
-  text-shadow: 0 1px 5px #000;
+  font-size: 10px;
+  color: #fff7ed;
+  background: #482735;
+  padding: 4px 8px;
+  max-width: calc(100% - 45px);
 }
 .values-strip {
   background: #f0e8dd;

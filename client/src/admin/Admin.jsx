@@ -6,6 +6,7 @@ import QueueAdmin from "./QueueAdmin";
 import OperationsDashboard from "./OperationsDashboard";
 import BusinessReports from "./BusinessReports";
 import NotificationSettings from "./NotificationSettings";
+import { money, salonDefaults } from "../localization";
 const days = [
   "Sunday",
   "Monday",
@@ -139,8 +140,7 @@ export default function Admin() {
         setSettings(
           salon || {
             name: "Henna & Beauty (placeholder)",
-            currency: "UGX",
-            timezone: "Africa/Kampala",
+            ...salonDefaults,
             hours: days.map((_, day) => ({
               day,
               closed: day === 0,
@@ -206,10 +206,7 @@ export default function Admin() {
   }
   const canEdit = session?.staff.role === "Admin";
   const formatMoney = (value) => {
-    const currency = settings?.currency || "UGX";
-    const formatter = new Intl.NumberFormat("en", { style: "currency", currency });
-    const digits = formatter.resolvedOptions().maximumFractionDigits;
-    return formatter.format(value / 10 ** digits);
+    return money(value, settings?.currency || salonDefaults.currency);
   };
   return (
     <div className="admin-shell">
@@ -354,6 +351,7 @@ export default function Admin() {
                   }}
                 >
                   <h2>Business hours & settings</h2>
+                  {(settings.currency !== salonDefaults.currency || settings.timezone !== salonDefaults.timezone) && <p className="admin-alert" role="status">Minnesota target settings are USD and America/Chicago. Current saved settings are {settings.currency} and {settings.timezone}. Review existing prices and active visits before changing them; never relabel legacy prices or shift saved visits.</p>}
                   <p className="booking-note">Hours changes that conflict with future appointments are rejected. Timezone changes require reviewing future appointments and clearing active queue visits. Existing reservations retain their saved time, price, currency, and duration.</p>
                   {canEdit && <div className="admin-actions">
                     <button type="button" onClick={() => changePane("appointments")}>Appointment policies & qualifications</button>
@@ -371,8 +369,8 @@ export default function Admin() {
                   </p>
                   {[
                     ["name", "Salon name"],
-                    ["currency", "Currency (ISO code, e.g. UGX)"],
-                    ["timezone", "Timezone (e.g. Africa/Kampala)"],
+                    ["currency", "Currency (USD for US dollars)"],
+                    ["timezone", "Timezone (America/Chicago for Minnesota)"],
                   ].map(([key, label]) => (
                     <label key={key}>
                       {label}
@@ -473,8 +471,7 @@ export default function Admin() {
                     Active services appear on the public menu. To make a service
                     bookable, assign it to an active Artist in Booking
                     configuration and save that Artist’s recurring shift.
-                    Prices are stored in the smallest currency unit: for UGX,
-                    10000 means UGX 10,000; for USD, 10000 means USD 100.
+                    USD prices are stored in cents: 3000 means $30.00. Legacy currencies retain their original units. Confirm every price before changing business currency.
                   </p>
                 )}
                 {pane === "schedules" && (

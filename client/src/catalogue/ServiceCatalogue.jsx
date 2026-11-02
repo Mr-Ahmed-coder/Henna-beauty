@@ -43,7 +43,7 @@ export default function ServiceCatalogue({ limit }) {
       {services.map((service) => (
         <article className="catalogue-card" key={service._id}>
           {service.imageUrl ? (
-            <img src={service.imageUrl} alt="" />
+            <img src={service.imageUrl} alt="" loading="lazy" decoding="async" width="720" height="480" />
           ) : (
             <div className="catalogue-image-placeholder" aria-hidden="true">
               ✳

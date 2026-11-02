@@ -14,7 +14,7 @@ export default function Contact() {
           </>
         }
       >
-        We’re preparing the details for your visit. Official contact information
+        Serving Minnesota’s Somali community. We’re preparing the details for your visit. Official contact information
         will appear here once confirmed.
       </PageHeading>
       <section className="contact-grid container">

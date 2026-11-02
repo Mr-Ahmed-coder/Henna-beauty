@@ -5,6 +5,7 @@ import { formatTime, money } from "../booking/api";
 import { queueApi, useQueuePolling } from "./api";
 import JoinQueue from "./JoinQueue";
 import PrivateUpdates from "../notifications/PrivateUpdates";
+import { calendarDate } from "../localization";
 function TicketView({ reference, token }) {
   const [revision, setRevision] = useState(0),
     { data, error: pollError } = useQueuePolling(
@@ -67,7 +68,7 @@ function TicketView({ reference, token }) {
         <>
           <div className="booking-confirmation">
             <p className="eyebrow">
-              {ticket.source} · {ticket.date}
+              {ticket.source} · {calendarDate(ticket.date)}
             </p>
             <h2>Ticket Q{String(ticket.number).padStart(3, "0")}</h2>
             <p className="queue-status" role="status">

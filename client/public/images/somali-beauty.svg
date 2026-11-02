@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="960" viewBox="0 0 720 960" role="img" aria-labelledby="title desc">
+  <title id="title">Modest beauty and henna — original illustration</title>
+  <desc id="desc">An elegant woman in a plum hijab and flowing rose clothing, with decorative henna on her hand, framed by gold floral details. Original community-inspired artwork, not a real salon employee or customer.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#eee1d5"/><stop offset="1" stop-color="#d4b5a8"/></linearGradient>
+    <linearGradient id="cloth" x2="1" y2="1"><stop stop-color="#694052"/><stop offset="1" stop-color="#35212d"/></linearGradient>
+    <linearGradient id="rose" x2="1" y2="1"><stop stop-color="#e8c7bd"/><stop offset="1" stop-color="#b9807b"/></linearGradient>
+    <linearGradient id="skin" x2="1" y2="1"><stop stop-color="#a16b4e"/><stop offset="1" stop-color="#70442f"/></linearGradient>
+    <pattern id="weave" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M24 3 45 24 24 45 3 24Z M24 15 33 24 24 33 15 24Z" fill="none" stroke="#f6e8d2" stroke-width="1" opacity=".35"/></pattern>
+    <g id="flower" fill="none" stroke="currentColor" stroke-width="2"><circle r="6"/><path d="M0-6C-20-30 20-30 0-6M6 0C30-20 30 20 6 0M0 6C20 30-20 30 0 6M-6 0C-30 20-30-20-6 0"/></g>
+  </defs>
+  <path fill="url(#bg)" d="M0 0h720v960H0z"/>
+  <path d="M65 960V345a295 295 0 0 1 590 0v615" fill="#faf7f0" opacity=".48"/>
+  <path d="M91 960V348a269 269 0 0 1 538 0v612" fill="none" stroke="#a9814c" opacity=".65"/>
+  <circle cx="362" cy="283" r="162" fill="#d6b68d" opacity=".22"/>
+  <g color="#a9814c" opacity=".7"><use href="#flower" x="118" y="189"/><use href="#flower" x="604" y="456"/><use href="#flower" x="107" y="628"/></g>
+  <path d="M127 960c-4-182 21-343 137-390l188-1c119 68 154 220 151 391Z" fill="url(#rose)"/>
+  <path d="M127 960c-4-182 21-343 137-390l188-1c119 68 154 220 151 391Z" fill="url(#weave)"/>
+  <path d="M224 538c-38-110-51-290 16-361 53-59 153-72 221-12 85 72 90 237 77 357l54 215c-132 21-269-4-389-74Z" fill="url(#cloth)"/>
+  <path d="M280 216c42-39 101-37 147-4l21 95c-4 76-36 144-82 154-46-3-93-69-100-142Z" fill="url(#skin)"/>
+  <path d="M265 286c32-20 63-53 73-84 30 40 72 62 116 72-8-74-47-116-100-114-64 3-93 58-89 126Z" fill="#583344"/>
+  <path d="M269 301c-17 80-6 193 81 253 65 42 125 56 184 47-46 14-107 4-157-17-125-51-154-164-143-268" fill="#88566a" opacity=".45"/>
+  <path d="M293 305q20-13 38 0m47-1q20-13 39 1" fill="none" stroke="#38251f" stroke-width="5" stroke-linecap="round"/>
+  <path d="M301 314q13 8 26-1m57 0q13 9 26 0" fill="none" stroke="#37241f" stroke-width="3" stroke-linecap="round"/>
+  <path d="m356 326-8 33 17 3" fill="none" stroke="#603a2b" stroke-width="3" stroke-linecap="round"/>
+  <path d="M334 390q21 13 43-2-18 28-43 2Z" fill="#683b39"/><path d="M338 393q17 5 33-2" fill="none" stroke="#d2a28a" stroke-width="2"/>
+  <path d="M274 432c32 70 69 89 132 109-85-4-156-34-184-97" fill="#482735"/>
+  <circle cx="298" cy="518" r="8" fill="#cba66b"/><path d="m298 509 5 9-5 9-5-9Z" fill="#f4e2bb"/>
+  <path d="M493 960c-9-100-44-173-92-225l-62-58c-15-14-24-33-16-41 6-6 19 0 37 14l-27-78c-4-13-1-22 7-22 8 0 12 9 17 21l23 52-8-102c-1-14 4-20 11-19 8 1 10 10 12 23l10 93 12-83c2-14 9-19 16-14 6 4 5 13 4 24l-5 85 22-52c5-12 12-16 18-10 5 5 1 16-3 28l-19 72c-3 26 4 44 19 64 42 56 86 142 105 228Z" fill="url(#skin)"/>
+  <g color="#553021" fill="none" stroke="#553021" stroke-width="2.5" stroke-linecap="round">
+    <use href="#flower" x="405" y="704" transform="rotate(-15 405 704)"/>
+    <circle cx="405" cy="704" r="31"/><circle cx="405" cy="704" r="37" stroke-dasharray="1 7"/>
+    <path d="M400 665q-12-24-5-47m15 48q18-27 16-51m-39 52q-20-18-27-39m50 114q23 31 29 63m-15-56q30 12 31 35"/>
+    <path d="m392 637-12-7m15 0 10-13m16 24 13-9m-53 18-13-1m65 123 13 3m-7 15-10 10M374 584l14-1m-14 10 15-1m-42-15 11-4m0 9-9 4m72-18 13 2m-15 7 12 2"/>
+    <path d="m446 808 20-7m-16 15 21-7m-18 16 23-7"/>
+  </g>
+  <path d="m472 851 77-31 46 140H484Z" fill="#482735"/>
+  <path d="m478 866 76-30m-72 42 77-30" stroke="#b18b57" stroke-width="3"/>
+  <g fill="#a9814c" opacity=".65"><circle cx="603" cy="168" r="3"/><circle cx="587" cy="193" r="2"/><circle cx="126" cy="474" r="3"/></g>
+</svg>

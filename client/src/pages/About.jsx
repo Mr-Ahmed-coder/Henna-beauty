@@ -13,8 +13,8 @@ export default function About() {
           </>
         }
       >
-        Henna & Beauty is a working salon concept, bringing the beauty of
-        personal expression into everyday rituals.
+        Henna & Beauty is being shaped for Minnesota’s Somali community,
+        celebrating henna artistry, modest styling, and personal expression.
       </PageHeading>
       <section className="about-manifesto container">
         <Flower2 size={70} strokeWidth={0.7} />

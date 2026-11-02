@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { bookingApi, money, formatTime } from "./api";
 import "./booking.css";
+import { slotTime } from "../localization";
 export default function BookingForm({
   onBooked,
   session,
@@ -16,7 +17,7 @@ export default function BookingForm({
     [start, setStart] = useState(""),
     [customer, setCustomer] = useState({
       customerName: "",
-      phone: "",
+      phone: "+1 ",
       notes: "",
     }),
     [inAppUpdates, setInAppUpdates] = useState(true),
@@ -298,7 +299,7 @@ export default function BookingForm({
                         checked={start === slot.start}
                         onChange={() => setStart(slot.start)}
                       />
-                      <span>{slot.label}</span>
+                      <span>{slotTime(slot.start, catalog.timezone)}</span>
                     </label>
                   ))
                 )}
@@ -326,6 +327,7 @@ export default function BookingForm({
                     <input
                       required
                       type="tel"
+                      placeholder="+1 (612) 555-0123"
                       autoComplete="tel"
                       maxLength={25}
                       value={customer.phone}
@@ -346,6 +348,7 @@ export default function BookingForm({
                     />
                   </label>
                   <p className="booking-note">
+                    Use +1 and your area code for US numbers; international numbers are welcome. This example is not the salon’s phone number.{" "}
                     Your name and phone are shared with authorized salon staff
                     to manage this reservation. Please avoid sensitive
                     information in notes.

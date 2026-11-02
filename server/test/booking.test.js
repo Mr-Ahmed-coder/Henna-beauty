@@ -754,11 +754,12 @@ test("appointment booking integration", async (t) => {
   await t.test(
     "daylight saving repeated hours yield distinct real instants and spring gaps do not invent slots",
     async () => {
+      for (const timezone of ["America/New_York", "America/Chicago"]) {
       await Settings.updateOne(
         { _id: "salon" },
         {
           $set: {
-            timezone: "America/New_York",
+            timezone,
             hours: hours.map((h) => ({ ...h, open: "00:00", close: "04:00" })),
           },
         },
@@ -798,6 +799,7 @@ test("appointment booking integration", async (t) => {
         spring.slots.some((s) => s.label.startsWith("02:")),
         false,
       );
+      }
     },
   );
 });

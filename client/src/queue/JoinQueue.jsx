@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { queueApi, useQueuePolling } from "./api";
 import { money } from "../booking/api";
+import { calendarDate } from "../localization";
 import "../booking/booking.css";
 import "./queue.css";
 export default function JoinQueue({ session, onJoined }) {
@@ -8,7 +9,7 @@ export default function JoinQueue({ session, onJoined }) {
     [service, setService] = useState(""),
     [customer, setCustomer] = useState({
       customerName: "",
-      phone: "",
+      phone: "+1 ",
       notes: "",
     }),
     [inAppUpdates, setInAppUpdates] = useState(true),
@@ -63,7 +64,7 @@ export default function JoinQueue({ session, onJoined }) {
       ) : (
         <>
           <p>
-            Today: <strong>{data.date}</strong> · {data.timezone} ·{" "}
+            Today: <strong>{calendarDate(data.date)}</strong> · {data.timezone} ·{" "}
             {data.waitingCount} waiting
           </p>
           <p className="booking-note">
@@ -133,7 +134,7 @@ export default function JoinQueue({ session, onJoined }) {
                 required
                 type="tel"
                 maxLength={25}
-                placeholder="+256 700 123456"
+                placeholder="+1 (612) 555-0123"
                 autoComplete="tel"
                 value={customer.phone}
                 onChange={(e) =>
@@ -153,6 +154,7 @@ export default function JoinQueue({ session, onJoined }) {
               />
             </label>
             <p className="booking-note">
+              US customers: include +1 and your area code. Other international numbers are welcome. The example is not a salon contact.{" "}
               One active ticket per international phone number. Your contact
               details are visible only through your private link and authorized
               staff access. Please avoid sensitive information in notes.

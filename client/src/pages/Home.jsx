@@ -16,8 +16,9 @@ export default function Home() {
             every <em>detail.</em>
           </h1>
           <p className="hero-description">
-            An artful touch. A moment of calm. Discover a salon concept where
-            henna traditions meet everyday beauty.
+            Henna artistry and beauty for Minnesota’s Somali community.
+            A welcoming space for personal style, modest fashion, and the
+            traditions you make your own.
           </p>
           <div className="actions">
             <Link className="button" to="/appointments">
@@ -39,8 +40,10 @@ export default function Home() {
         <div className="hero-visual">
           <img
             className="hero-photo"
-            src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=85"
-            alt="Beauty inspiration: natural portrait in warm sunlight"
+            src="/images/somali-beauty.svg"
+            alt="Original illustration of a woman in a plum hijab with decorative henna on her hand"
+            width="720"
+            height="960"
             fetchPriority="high"
           />
           <div className="image-label">BEAUTY IN YOUR OWN WAY</div>
@@ -52,7 +55,7 @@ export default function Home() {
               <em>A lovely feeling.</em>
             </span>
           </div>
-          <span className="photo-note">Concept imagery · not salon work</span>
+          <span className="photo-note">Original illustration · not salon staff or work</span>
         </div>
       </section>
       <div className="values-strip">
@@ -107,8 +110,8 @@ export default function Home() {
             care come together.
           </p>
           <p>
-            This is the beginning of our salon story. We look forward to sharing
-            the people and place behind it.
+            Created with Minnesota’s Somali community in mind. Official salon
+            photographs, team details, and our location will be shared once confirmed.
           </p>
           <Link className="text-link" to="/about">
             Read our story <ArrowUpRight size={18} />
