@@ -70,19 +70,14 @@ export default function JoinQueue({ session, onJoined }) {
           <p className="booking-note">
             {accepting
               ? session
-                ? "Register an arriving walk-in. Reception check-in is recorded immediately."
+                ? "Register a walk-in and check them in."
                 : "Join from home, then keep your private ticket page open."
               : "The queue is not accepting " +
                 (session ? "walk-in" : "online") +
                 " entries right now."}
           </p>
           <p className="booking-note">
-            Tickets update every 10 seconds. Wait estimates are approximate and
-            do not reserve an appointment. Remote customers have{" "}
-            {data.policy.remoteArrivalMinutes} minutes to arrive after being
-            called, plus {data.policy.graceMinutes} minutes’ grace. No
-            external messages are sent; private in-app updates appear on your
-            ticket link.
+            Keep your ticket page open for updates every 10 seconds. Wait times are estimates, not appointments. After you’re called, you have {data.policy.remoteArrivalMinutes} minutes to arrive, plus {data.policy.graceMinutes} minutes’ grace. Updates appear on your ticket page; no text message is sent.
           </p>
           <form className="booking-form" onSubmit={submit}>
             <label>
@@ -154,10 +149,7 @@ export default function JoinQueue({ session, onJoined }) {
               />
             </label>
             <p className="booking-note">
-              US customers: include +1 and your area code. Other international numbers are welcome. The example is not a salon contact.{" "}
-              One active ticket per international phone number. Your contact
-              details are visible only through your private link and authorized
-              staff access. Please avoid sensitive information in notes.
+              Use +1 for US numbers or another international country code. The example isn’t a salon contact. One active ticket per phone number. Only authorized staff and anyone with your private link can view your details. Please leave sensitive information out of notes.
             </p>
             <label className="notification-toggle">
               <input
@@ -165,7 +157,7 @@ export default function JoinQueue({ session, onJoined }) {
                 checked={inAppUpdates}
                 onChange={(event) => setInAppUpdates(event.target.checked)}
               />
-              Keep secure in-app queue updates in this private ticket link
+              Receive updates on my private ticket page
             </label>
             <button
               className="button"
@@ -175,7 +167,7 @@ export default function JoinQueue({ session, onJoined }) {
                 ? "Creating ticket…"
                 : session
                   ? "Register walk-in"
-                  : "Join today’s queue"}
+                  : "Join Queue"}
             </button>
           </form>
         </>

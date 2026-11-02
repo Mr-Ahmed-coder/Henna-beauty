@@ -644,6 +644,18 @@ footer {
   padding: 55px 30px;
   max-width: 900px;
 }
+.about-copy {
+  max-width: 760px;
+  padding-block: 8px 64px;
+}
+.about-copy h2 {
+  font-size: clamp(26px, 4vw, 36px);
+  margin-bottom: 18px;
+}
+.about-copy p {
+  margin-top: 14px;
+  line-height: 1.9;
+}
 .about-manifesto > svg {
   margin: auto auto 24px;
   color: #ab8662;

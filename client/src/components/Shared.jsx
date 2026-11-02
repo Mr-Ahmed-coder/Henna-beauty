@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
-import { ArrowUpRight, ArrowRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 export function PageHeading({ eyebrow, title, children }) {
   return (
     <section className="page-heading container">
-      <p className="eyebrow">{eyebrow}</p>
+      {eyebrow && <p className="eyebrow">{eyebrow}</p>}
       <h1>{title}</h1>
-      <p className="intro">{children}</p>
+      {children && <p className="intro">{children}</p>}
     </section>
   );
 }
@@ -13,25 +13,15 @@ export function VisitCTA() {
   return (
     <section className="visit container">
       <div>
-        <p className="eyebrow">MAKE SPACE FOR YOURSELF</p>
-        <h2>
-          Your next little
-          <br />
-          <em>moment of beauty.</em>
-        </h2>
+        <h2>Ready to book?</h2>
       </div>
       <div>
-        <p>
-          Reserve your next salon visit online.
-          <br />
-          Or join today’s queue and follow your private ticket.
-        </p>
         <div className="actions">
           <Link className="button light" to="/appointments">
-            Book an appointment <ArrowUpRight size={17} />
+            Book Appointment
           </Link>
           <Link className="text-link light-text" to="/queue">
-            Walk-in queue <ArrowRight size={17} />
+            Join Queue
           </Link>
         </div>
       </div>

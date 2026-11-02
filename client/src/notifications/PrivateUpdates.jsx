@@ -12,10 +12,8 @@ export default function PrivateUpdates({
     <section className="private-updates" aria-live="polite">
       <div className="private-updates-heading">
         <div>
-          <p className="eyebrow">PRIVATE UPDATES</p>
-          <h3>Visit notifications</h3>
+          <h3>Visit Updates</h3>
         </div>
-        <span>In this private link</span>
       </div>
       <label className="notification-toggle">
         <input
@@ -30,11 +28,10 @@ export default function PrivateUpdates({
             })
           }
         />
-        Keep in-app status updates enabled
+        Receive updates on this page
       </label>
       <p className="booking-note">
-        SMS and WhatsApp are not active. No external message will be sent until
-        the salon approves and configures a provider.
+        Updates appear here only. SMS and WhatsApp aren’t available.
       </p>
       {!inApp ? (
         <p className="booking-note">New in-app notices are paused. Your live visit status still updates here.</p>

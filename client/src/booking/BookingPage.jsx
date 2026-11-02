@@ -76,16 +76,11 @@ export default function BookingPage() {
   return (
     <>
       <PageHeading
-        eyebrow="A LITTLE TIME FOR YOU"
-        title={
-          <>
-            Your next <em>beauty ritual.</em>
-          </>
-        }
+        title={manage ? "My Booking" : "Book Appointment"}
       >
         {manage
-          ? "Keep your private access link to view or manage your reservation."
-          : "Choose a service, find your time, and reserve your salon visit."}
+          ? "View your appointment or change your plans."
+          : "Choose your service, artist, and time."}
       </PageHeading>
       <section className="booking-container container">
         {(error || pollError) && (
@@ -107,7 +102,7 @@ export default function BookingPage() {
                     ? "Your request is saved and awaiting salon approval."
                     : details.status === "Cancelled"
                       ? "Your reservation has been cancelled."
-                    : "Your reservation is saved. This page refreshes every 10 seconds."}
+                    : "Updates every 10 seconds."}
                 </p>
                 <dl>
                   <dt>Service</dt>
@@ -135,8 +130,7 @@ export default function BookingPage() {
                   )}
                 </dl>
                 <label className="booking-private">
-                  Private access link — save this securely; anyone with it can
-                  view your booking
+                  Save your private booking link
                   <input
                     readOnly
                     value={window.location.href}
@@ -144,8 +138,7 @@ export default function BookingPage() {
                   />
                 </label>
                 <p className="booking-note">
-                  Save this private link. The reference alone does not grant
-                  access, and this page shows secure in-app updates.
+                  Anyone with this link can view or manage your booking. Keep it private; the reference alone won’t open your details.
                 </p>
                 {policy && (
                   <p className="booking-note">
@@ -157,13 +150,7 @@ export default function BookingPage() {
                     {policy.reschedulingEnabled
                       ? `${policy.reschedulingNoticeHours} hours’ notice`
                       : "disabled"}
-                    . Changes are checked against current salon rules.
-                  </p>
-                )}
-                {details.status === "Pending" && (
-                  <p className="booking-note">
-                    Your request is awaiting salon approval. Keep this private
-                    page available for the confirmation update.
+                    .
                   </p>
                 )}
                 {details.status === "Confirmed" && (
@@ -188,14 +175,14 @@ export default function BookingPage() {
                       disabled={busy}
                       onClick={() => setReschedule(!reschedule)}
                     >
-                      Choose a new time
+                      Reschedule
                     </button>
                     <button
                       className="booking-secondary"
                       disabled={busy}
                       onClick={() => setConfirmCancel(true)}
                     >
-                      {busy ? "Updating…" : "Cancel reservation"}
+                      {busy ? "Updating…" : "Cancel Booking"}
                     </button>
                   </div>
                 )}

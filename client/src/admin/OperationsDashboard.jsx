@@ -72,8 +72,7 @@ export default function OperationsDashboard({ session, onOpen }) {
     <section className="operations-dashboard">
       <div className="admin-section-title">
         <div>
-          <p className="eyebrow">TODAY AT A GLANCE</p>
-          <h2>Salon operations</h2>
+          <h2>Today at the Salon</h2>
         </div>
         {queue && <p>{queue.isOpen ? "Salon open" : "Salon closed"}</p>}
       </div>
@@ -103,9 +102,9 @@ export default function OperationsDashboard({ session, onOpen }) {
               <button onClick={() => onOpen("schedules")}>Review schedules</button>
             </article>
             <article>
-              <span>Services ready to assign</span>
+              <span>Configured services</span>
               <strong>{configuredServices.length}</strong>
-              <button onClick={() => onOpen("services")}>Manage catalogue</button>
+              <button onClick={() => onOpen("services")}>Manage services</button>
             </article>
           </div>
           <div className="operations-summary">
@@ -122,7 +121,7 @@ export default function OperationsDashboard({ session, onOpen }) {
             <h3>Artists right now</h3>
             {!metrics.artists.length && <p>No active artists configured.</p>}
             {metrics.artists.map((artist) => <div className="operations-row" key={artist.id}><strong>{artist.name}</strong><span>{artist.status}</span></div>)}
-            <p className="booking-note">Available means on shift, outside breaks, and without current appointment or queue occupancy. Service qualifications and full duration are checked when assigning. Average wait uses queue entry to service start ({metrics.waitSampleCount} recorded starts today).</p>
+            <details className="booking-note"><summary>About availability and wait times</summary><p>Available artists are on shift, outside breaks, and not currently booked or serving a queue customer. Availability is checked again when assigning a service. Average wait is measured from joining the queue to starting service ({metrics.waitSampleCount} recorded starts today).</p></details>
           </article>}
           <div className="operations-grid">
             <article className="operations-panel">
@@ -169,15 +168,11 @@ export default function OperationsDashboard({ session, onOpen }) {
               )}
             </article>
           </div>
-          <p className="booking-note">
-            Artist assignment remains live: appointments, breaks, and current
-            queue work are checked before anyone is called or booked.
-          </p>
           {!setup.settings || !setup.services.length || !artists.length || !scheduledArtists.length || !configuredServices.length ? (
             <div className="admin-guidance">
               <h3>Finish salon setup</h3>
               <p>
-                Online availability needs business hours, an active service, an active Artist, a saved weekly shift, and an Artist service qualification.
+                Add services and artists, set business hours and shifts, then assign service qualifications.
               </p>
               <div className="admin-actions">
                 <button onClick={() => onOpen("services")}>1. Add services</button>

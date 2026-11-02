@@ -25,7 +25,7 @@ export default function App() {
           element={
             <section className="coming-soon container">
               <p className="eyebrow">404 · PAGE NOT FOUND</p>
-              <h1>A little off the path.</h1>
+              <h1>Page not found</h1>
               <Link className="button" to="/">
                 Back to home
               </Link>

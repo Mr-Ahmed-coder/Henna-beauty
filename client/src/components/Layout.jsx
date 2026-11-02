@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { ArrowUpRight, Menu, X, Sparkles } from "lucide-react";
+import { Menu, X } from "lucide-react";
 export function Brand() {
   return (
     <Link className="brand" to="/" aria-label="Henna and Beauty home">
@@ -8,7 +8,7 @@ export function Brand() {
         ✳
       </span>
       <span>
-        henna & beauty<small>THE SALON CONCEPT</small>
+        henna & beauty<small>MINNESOTA</small>
       </span>
     </Link>
   );
@@ -19,7 +19,7 @@ export default function Layout() {
   const main = useRef(null);
   useEffect(() => {
     window.scrollTo(0, 0);
-    document.title = `${pathname.startsWith("/appointments") ? "Appointments" : pathname.startsWith("/queue") ? "Queue" : { "/": "Home", "/services": "Services", "/about": "About", "/contact": "Contact" }[pathname] || "Page not found"} · Henna & Beauty Preview`;
+    document.title = `${pathname.startsWith("/appointments") ? pathname.endsWith("/manage") ? "My Booking" : "Book Appointment" : pathname.startsWith("/queue") ? "Queue" : { "/": "Home", "/services": "Services", "/about": "About", "/contact": "Contact", "/track": "My Booking" }[pathname] || "Page not found"} · Henna & Beauty Preview`;
     main.current?.focus();
   }, [pathname]);
   return (
@@ -36,8 +36,7 @@ export default function Layout() {
         Skip to content
       </a>
       <div className="preview-banner">
-        A little glimpse of what’s to come <span>·</span> Preview website —
-        salon details are placeholders
+        Preview website · Salon details are awaiting confirmation.
       </div>
       <header>
         <div className="nav-wrap">
@@ -59,7 +58,7 @@ export default function Layout() {
             {[
               ["/", "Home"],
               ["/services", "Services"],
-              ["/about", "Our story"],
+              ["/about", "About"],
               ["/contact", "Contact"],
             ].map(([to, label]) => (
               <NavLink key={to} to={to} end onClick={() => setOpen(false)}>
@@ -71,13 +70,13 @@ export default function Layout() {
               className="button nav-appointment"
               onClick={() => setOpen(false)}
             >
-              Book appointment <ArrowUpRight size={16} />
+              Book Appointment
             </Link>
             <Link to="/queue" onClick={() => setOpen(false)}>
-              Join queue
+              Join Queue
             </Link>
             <Link to="/track" onClick={() => setOpen(false)}>
-              Track my visit
+              My Booking
             </Link>
           </nav>
         </div>
@@ -90,31 +89,25 @@ export default function Layout() {
           <div>
             <Brand />
             <p>
-              Artful details. Thoughtful care.
-              <br />A little time, just for you.
+              Henna & beauty for Minnesota’s Somali community.
             </p>
           </div>
           <div>
             <h3>Explore</h3>
-            <Link to="/services">Our services</Link>
-            <Link to="/about">Our story</Link>
+            <Link to="/services">Services</Link>
+            <Link to="/about">About</Link>
             <Link to="/contact">Contact & location</Link>
           </div>
           <div>
             <h3>Plan your visit</h3>
-            <Link to="/appointments">Appointments</Link>
-            <Link to="/queue">Today’s queue</Link>
-            <Link to="/track">Track my visit</Link>
-            <p>Hours & location to be confirmed.</p>
+            <Link to="/appointments">Book Appointment</Link>
+            <Link to="/queue">Join Queue</Link>
+            <Link to="/track">My Booking</Link>
           </div>
         </div>
         <div className="footer-bottom">
           <span>
-            © {new Date().getFullYear()} Henna & Beauty · Placeholder business
-            name
-          </span>
-          <span>
-            <Sparkles size={13} /> A salon concept, thoughtfully made.
+            © {new Date().getFullYear()} Henna & Beauty
           </span>
         </div>
       </footer>

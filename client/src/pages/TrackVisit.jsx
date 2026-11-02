@@ -28,8 +28,8 @@ export default function TrackVisit() {
   }
   return (
     <>
-      <PageHeading eyebrow="PRIVATE VISIT ACCESS" title="Track my visit">
-        Use the private link saved from your appointment or queue confirmation.
+      <PageHeading title="My Booking">
+        Paste your private link to open an appointment or queue ticket.
       </PageHeading>
       <section className="booking-container container">
         <form className="booking-ui booking-form" onSubmit={submit}>
@@ -45,9 +45,9 @@ export default function TrackVisit() {
             />
           </label>
           <p className="booking-note">
-            Keep this link private. It is the secure way to view your booking or ticket; a reference alone is not enough.
+            Keep your link private. A booking reference alone won’t open your details.
           </p>
-          <button className="button">Open my visit</button>
+          <button className="button">Open My Booking</button>
         </form>
       </section>
     </>

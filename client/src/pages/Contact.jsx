@@ -1,75 +1,20 @@
-import { MapPin, Clock, Mail, ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PageHeading } from "../components/Shared";
 export default function Contact() {
   return (
     <>
-      <PageHeading
-        eyebrow="LET’S CONNECT"
-        title={
-          <>
-            A warm welcome
-            <br />
-            <em>starts here.</em>
-          </>
-        }
-      >
-        Serving Minnesota’s Somali community. We’re preparing the details for your visit. Official contact information
-        will appear here once confirmed.
-      </PageHeading>
+      <PageHeading title="Contact & Location">Our address and contact details will be listed here once confirmed.</PageHeading>
       <section className="contact-grid container">
         <div className="contact-details">
-          {[
-            [
-              MapPin,
-              "Find the salon",
-              "Address & map coming soon",
-              "The official salon location is not yet available.",
-            ],
-            [
-              Clock,
-              "Opening hours",
-              "To be confirmed",
-              "Confirmed hours and holiday schedules will be added here.",
-            ],
-            [
-              Mail,
-              "Get in touch",
-              "Contact details coming soon",
-              "Phone, email, and social links are awaiting confirmation.",
-            ],
-          ].map(([Icon, title, value, note]) => (
-            <article key={title}>
-              <Icon strokeWidth={1.3} />
-              <div>
-                <p className="eyebrow">{title}</p>
-                <h3>{value}</h3>
-                <p>{note}</p>
-              </div>
-            </article>
+          {[["Salon address", "Not yet confirmed"], ["Opening hours", "Not yet published"], ["Phone & email", "Not yet confirmed"]].map(([title, value]) => (
+            <article key={title}><div><h3>{title}</h3><p>{value}</p></div></article>
           ))}
         </div>
         <aside className="contact-aside">
-          <p className="eyebrow">PLAN A LITTLE YOU-TIME</p>
-          <h2>
-            Something lovely
-            <br />
-            is <em>on the way.</em>
-          </h2>
-          <p>
-            Reserve an appointment online, join today’s queue from home, or ask
-            reception to register your walk-in visit.
-          </p>
-          <Link className="button" to="/appointments">
-            Book an appointment <ArrowUpRight size={17} />
-          </Link>
-          <Link className="text-link" to="/queue">
-            Join today’s queue <ArrowUpRight size={17} />
-          </Link>
-          <p className="fine-print">
-            No contact form is active. Customer details are collected only for
-            appointment reservations and queue tickets.
-          </p>
+          <h2>Plan your visit</h2>
+          <p>Book ahead or join the queue. Walk-ins can also check in with reception.</p>
+          <Link className="button" to="/appointments">Book Appointment</Link>
+          <Link className="text-link" to="/queue">Join Queue</Link>
         </aside>
       </section>
     </>

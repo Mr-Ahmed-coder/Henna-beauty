@@ -289,10 +289,10 @@ export default function Admin() {
             <p className="admin-role">
               {session.staff.role} ·{" "}
               {canEdit
-                ? "Manage salon records."
+                ? "Manage the salon."
                 : session.staff.role === "Artist"
-                  ? "View your schedule, services, and salon hours."
-                  : "Read-only access to staff, services, hours, and schedules."}
+                  ? "View your schedule and assigned visits."
+                  : "Manage appointments and the queue."}
             </p>
             <nav className="admin-tabs" aria-label="Administration">
               <span className="admin-tab-label">Today</span>

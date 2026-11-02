@@ -208,16 +208,11 @@ export default function QueuePage() {
   return (
     <>
       <PageHeading
-        eyebrow="YOUR PLACE, A LITTLE MORE FREEDOM"
-        title={
-          <>
-            A calmer way to <em>wait.</em>
-          </>
-        }
+        title={tracking ? "My Queue Ticket" : "Join Queue"}
       >
         {tracking
-          ? "Your private digital queue ticket."
-          : "Join today’s queue from home or check in with reception at the salon."}
+          ? "Follow your place and arrival instructions here."
+          : "Join online, then check in with reception when you arrive."}
       </PageHeading>
       {tracking ? (
         reference && token ? (
@@ -245,7 +240,7 @@ export default function QueuePage() {
             }
           />
           <Link className="text-link" to="/appointments">
-            Prefer a reserved time? Book an appointment
+            Book Appointment Instead
           </Link>
         </section>
       )}

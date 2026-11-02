@@ -145,7 +145,7 @@ export default function BookingForm({
           </p>
           {review ? (
             <section className="booking-review">
-              <h2>Review your {reservation ? "new time" : "reservation"}</h2>
+              <h2>Review your {reservation ? "new time" : "booking"}</h2>
               <dl>
                 <dt>Service</dt>
                 <dd>{selected?.name}</dd>
@@ -183,7 +183,7 @@ export default function BookingForm({
                     ? "Saving reservation…"
                     : reservation
                       ? "Confirm reschedule"
-                      : "Confirm reservation"}
+                      : "Confirm Booking"}
                 </button>
                 <button
                   className="booking-secondary"
@@ -221,7 +221,7 @@ export default function BookingForm({
                     <option key={s._id} value={s._id} disabled={!s.bookable}>
                       {s.name} · {s.durationMinutes} min ·{" "}
                       {money(s.priceMinor, catalog.currency)}
-                      {!s.bookable ? " · Setup needed" : ""}
+                      {!s.bookable ? " · Not available" : ""}
                     </option>
                   ))}
                 </select>
@@ -232,8 +232,8 @@ export default function BookingForm({
               {selected && !selected.bookable && (
                 <p className="booking-note" role="status">
                   {!selected.qualifiedArtistCount
-                    ? "This service needs an active Artist with this qualification before it can be booked online."
-                    : "This service needs a qualified Artist with a recurring shift during salon hours before it can be booked online."}
+                    ? "No artist is assigned to this service yet."
+                    : "An artist needs booking hours for this service before you can book online."}
                 </p>
               )}
               {selected && (
@@ -348,10 +348,7 @@ export default function BookingForm({
                     />
                   </label>
                   <p className="booking-note">
-                    Use +1 and your area code for US numbers; international numbers are welcome. This example is not the salon’s phone number.{" "}
-                    Your name and phone are shared with authorized salon staff
-                    to manage this reservation. Please avoid sensitive
-                    information in notes.
+                    Use +1 for US numbers or another international country code. The example isn’t a salon contact. Only authorized staff and anyone with your private link can view your details. Please leave sensitive information out of notes.
                   </p>
                   <label className="notification-toggle">
                     <input
@@ -359,7 +356,7 @@ export default function BookingForm({
                       checked={inAppUpdates}
                       onChange={(event) => setInAppUpdates(event.target.checked)}
                     />
-                    Keep secure in-app appointment updates in my private link
+                    Receive updates on my private booking page
                   </label>
                 </>
               )}
@@ -375,7 +372,7 @@ export default function BookingForm({
                 .
               </p>
               <button className="button" disabled={!start || loading || busy}>
-                Review {reservation ? "new time" : "reservation"}
+                Review {reservation ? "new time" : "booking"}
               </button>
             </form>
           )}

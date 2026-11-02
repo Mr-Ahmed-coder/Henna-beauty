@@ -5,9 +5,9 @@ import { bookingApi, money } from "../booking/api";
 
 function availabilityMessage(service) {
   if (!service.qualifiedArtistCount)
-    return "Not available online yet — no qualified artist is configured.";
+    return "Not available online yet — no artist is assigned to this service.";
   if (!service.scheduledArtistCount)
-    return "Not available online yet — a qualified artist needs a recurring shift during salon hours.";
+    return "Not available online yet — an artist needs booking hours for this service.";
   return "Availability is checked when you choose a date.";
 }
 
@@ -61,7 +61,7 @@ export default function ServiceCatalogue({ limit }) {
             </div>
             {service.bookable ? (
               <Link className="text-link" to={`/appointments?service=${service._id}`}>
-                Book this service <ArrowUpRight size={16} />
+                Book Appointment <ArrowUpRight size={16} />
               </Link>
             ) : (
               <p className="catalogue-unavailable">
