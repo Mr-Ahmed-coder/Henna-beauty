@@ -15,8 +15,41 @@ export function Brand() {
 }
 export default function Layout() {
   const [open, setOpen] = useState(false);
+  const [hasStaffSession, setHasStaffSession] = useState(false);
   const { pathname } = useLocation();
   const main = useRef(null);
+
+  useEffect(() => {
+    let controller;
+
+    async function checkStaffSession() {
+      controller?.abort();
+      const request = new AbortController();
+      controller = request;
+
+      try {
+        const response = await fetch("/api/admin/auth/me", {
+          credentials: "same-origin",
+          cache: "no-store",
+          signal: request.signal,
+        });
+        const session = response.ok ? await response.json() : null;
+        if (!request.signal.aborted) {
+          setHasStaffSession(Boolean(session?.staff?.id));
+        }
+      } catch {
+        if (!request.signal.aborted) setHasStaffSession(false);
+      }
+    }
+
+    checkStaffSession();
+    window.addEventListener("focus", checkStaffSession);
+    return () => {
+      window.removeEventListener("focus", checkStaffSession);
+      controller?.abort();
+    };
+  }, []);
+
   useEffect(() => {
     window.scrollTo(0, 0);
     document.title = `${pathname.startsWith("/appointments") ? pathname.endsWith("/manage") ? "My Booking" : "Book Appointment" : pathname.startsWith("/queue") ? "Queue" : { "/": "Home", "/services": "Services", "/about": "About", "/contact": "Contact", "/track": "My Booking" }[pathname] || "Page not found"} · Henna & Beauty Preview`;
@@ -77,6 +110,9 @@ export default function Layout() {
             </Link>
             <Link to="/track" onClick={() => setOpen(false)}>
               My Booking
+            </Link>
+            <Link to="/admin" className="staff-link" onClick={() => setOpen(false)}>
+              {hasStaffSession ? "Dashboard" : "Staff Login"}
             </Link>
           </nav>
         </div>
