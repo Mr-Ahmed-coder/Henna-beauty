@@ -4,9 +4,16 @@ Run `npm run demo` from the repository root, then open [the demo](http://127.0.0
 
 The site displays a **DEMO** notice on public and staff pages. Use fictitious customer details. The `salon_demo` database runs on its own `salon-demo` replica set at port 27028 and stores its data in `server/.local/demo/mongodb`. The web address uses a different loopback host from the regular app to keep its staff cookies separate.
 
+## Choose your demo login
+
+1. Leave `npm run demo` running. In a second PowerShell window at the repository root, run `.\server\scripts\demo-admin.ps1`.
+2. Enter your chosen email and a demo-only password of 12–128 characters. The password and confirmation prompts are masked. The script creates one demo administrator or updates the existing demo administrator in place and clears its sessions. Run it again if you forget the demo credentials.
+3. Open [staff sign-in](http://127.0.0.2:5180/staff) and enter the email and password you chose. Use this address for the public site as well. It serves the regular salon UI and API against the same isolated demo database. Any login file from an earlier demo setup is obsolete after updating the credentials.
+
+## Walk through the demo
+
 1. Open **Services** and book a service with **Demo Henna Artist**. Pick a Tuesday through Saturday and a time within 10:00 AM–5:00 PM Central. Appointment lead time and conflict checks still apply.
-2. Open [staff sign-in](http://127.0.0.2:5180/staff) or use **Team Access**. Read the generated demo email and password from the ignored `server/.local/demo/admin-login.json` file on your machine. Keep that file private.
-3. Open **Appointments** to find and manage the booking. During demo hours, use **Queue** → **Register walk-in**. Walk-in intake follows the existing queue policy, available time, and closing cutoff.
+2. Open **Appointments** to find and manage the booking. During demo hours, use **Queue** → **Register walk-in**. Walk-in intake follows the existing queue policy, available time, and closing cutoff.
 
 ## Atlas preparation
 

@@ -1,11 +1,13 @@
 import mongoose from "mongoose";
 import { localUri } from "./local-database.js";
-import { initializeModels, Schedule, Service, Settings, Staff } from "../src/models/index.js";
+import { initializeModels, Schedule, Service, Session, Settings, Staff } from "../src/models/index.js";
 import { ArtistProfile } from "../src/models/booking.js";
 import { hashPassword } from "../src/security.js";
 
 export const demoDatabaseName = "salon_demo";
-export const demoAdminEmail = "admin@salon-demo.test";
+export const demoDatabasePort = 27028;
+export const demoReplicaSet = "salon-demo";
+const demoAdminName = "Demo Administrator";
 const marker = { _id: "salon-demo-v1" };
 
 export async function readDemoCatalogue() {
@@ -40,15 +42,12 @@ export async function demoIsSeeded() {
   return false;
 }
 
-export async function seedDemo({ services, currency, adminPassword, artistPassword }) {
+export async function seedDemo({ services, currency, artistPassword }) {
   if (await demoIsSeeded()) return false;
   if (services.length !== 3) throw new Error("Demo setup requires exactly three service definitions.");
   await initializeModels();
 
-  const [adminHash, artistHash] = await Promise.all([
-    hashPassword(adminPassword),
-    hashPassword(artistPassword),
-  ]);
+  const artistHash = await hashPassword(artistPassword);
   const hours = Array.from({ length: 7 }, (_, day) => ({
     day,
     closed: day < 2,
@@ -63,7 +62,6 @@ export async function seedDemo({ services, currency, adminPassword, artistPasswo
     })), { session, ordered: true });
     const [artist] = await Staff.create([
       { name: "Demo Henna Artist", email: "artist@salon-demo.test", role: "Artist", passwordHash: artistHash },
-      { name: "Demo Administrator", email: demoAdminEmail, role: "Admin", passwordHash: adminHash },
     ], { session, ordered: true });
     await Settings.create([{
       _id: "salon",
@@ -85,4 +83,37 @@ export async function seedDemo({ services, currency, adminPassword, artistPasswo
     })), { session, ordered: true });
   });
   return true;
+}
+
+export async function setDemoAdministrator({ email, password }) {
+  if (!(await demoIsSeeded())) throw new Error("Start the demo to initialize its database first.");
+  const passwordHash = await hashPassword(password);
+  const credentials = { email, passwordHash, active: true };
+
+  await mongoose.connection.transaction(async (session) => {
+    const setup = mongoose.connection.db.collection("demosetup");
+    // Updating the marker serializes concurrent setups, even when there is no account yet.
+    const state = await setup.findOneAndUpdate(marker, { $inc: { adminRevision: 1 } }, { session });
+    if (!state) throw new Error("The demo setup marker is missing.");
+
+    const admins = await Staff.find({ role: "Admin" }).limit(2).session(session);
+    const administrator = admins[0];
+    if (admins.length > 1 || (administrator && (
+      state.adminId ? !administrator._id.equals(state.adminId) : administrator.name !== demoAdminName
+    ))) {
+      throw new Error("The demo has an unexpected administrator configuration. No account was changed.");
+    }
+
+    if (!administrator) {
+      const [created] = await Staff.create([{
+        ...credentials, role: "Admin", name: demoAdminName,
+      }], { session });
+      await setup.updateOne(marker, { $set: { adminId: created._id } }, { session });
+      return;
+    }
+    administrator.set(credentials);
+    await administrator.save({ session });
+    await setup.updateOne(marker, { $set: { adminId: administrator._id } }, { session });
+    await Session.deleteMany({ staff: administrator._id }, { session });
+  });
 }

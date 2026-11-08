@@ -5,7 +5,8 @@ import mongoose from "mongoose";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { createApp } from "../src/app.js";
 import { Appointment } from "../src/models/booking.js";
-import { demoAdminEmail, demoDatabaseName, seedDemo } from "../scripts/demo-data.js";
+import { Staff } from "../src/models/index.js";
+import { demoDatabaseName, seedDemo, setDemoAdministrator } from "../scripts/demo-data.js";
 
 test("isolated demo setup is repeatable and supports booking, admin, and walk-ins", async (t) => {
   const mongo = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
@@ -18,15 +19,21 @@ test("isolated demo setup is repeatable and supports booking, admin, and walk-in
     services: ["Henna", "Henna Full", "Makeup"].map((name) => ({
       name, priceMinor: 3000, durationMinutes: 30,
     })),
-    adminPassword: "test-demo-admin-only",
     artistPassword: "test-demo-artist-only",
   };
+  const initial = { email: "first@example.test", password: "test-demo-initial-only" };
+  const replacement = { email: "owner@example.test", password: "test-demo-replacement-only" };
 
   await mongoose.connect(mongo.getUri("wrong_database"));
   await assert.rejects(seedDemo(seed), /dedicated salon_demo/);
+  await assert.rejects(setDemoAdministrator(initial), /dedicated salon_demo/);
   await mongoose.disconnect();
   await mongoose.connect(mongo.getUri(demoDatabaseName));
+  await assert.rejects(setDemoAdministrator(initial), /initialize its database/);
   assert.equal(await seedDemo(seed), true);
+  assert.equal(await Staff.countDocuments({ role: "Admin" }), 0);
+  await setDemoAdministrator(initial);
+  const initialId = (await Staff.findOne({ role: "Admin" })).id;
 
   const tuesday = DateTime.now().setZone("America/Chicago")
     .plus({ weeks: 1 }).startOf("week").plus({ days: 1 }).set({ hour: 11 });
@@ -65,12 +72,31 @@ test("isolated demo setup is repeatable and supports booking, admin, and walk-in
   assert.equal((await call("/api/booking/reservations", "POST", booking)).status, 409);
   assert.equal((await call("/api/admin/appointments")).status, 401);
 
-  const login = await call("/api/admin/auth/login", "POST", { email: demoAdminEmail, password: seed.adminPassword });
-  assert.equal(login.status, 200);
-  const auth = {
-    Cookie: login.headers.get("set-cookie").split(";")[0],
-    "X-CSRF-Token": (await login.json()).csrf,
-  };
+  const signIn = (credentials) => call("/api/admin/auth/login", "POST", credentials);
+  async function loginAsAdmin(credentials) {
+    const response = await signIn(credentials);
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.staff.role, "Admin");
+    assert.equal(body.staff.id, initialId);
+    assert.match(response.headers.get("set-cookie"), /HttpOnly.*SameSite=Strict/);
+    return {
+      Cookie: response.headers.get("set-cookie").split(";")[0],
+      "X-CSRF-Token": body.csrf,
+    };
+  }
+  const oldAuth = await loginAsAdmin(initial);
+  await assert.rejects(setDemoAdministrator({ ...replacement, email: "artist@salon-demo.test" }), { code: 11000 });
+  assert.equal((await call("/api/admin/auth/me", "GET", undefined, oldAuth)).status, 200);
+  await setDemoAdministrator(replacement);
+  assert.equal(await Staff.countDocuments({ role: "Admin" }), 1);
+  assert.equal((await signIn(initial)).status, 401);
+  const wrong = await signIn({ ...replacement, password: initial.password });
+  assert.equal(wrong.status, 401);
+  assert.equal((await wrong.json()).error, "Invalid email or password");
+  assert.equal((await call("/api/admin/auth/me", "GET", undefined, oldAuth)).status, 401);
+  const auth = await loginAsAdmin(replacement);
+  assert.equal((await call("/api/admin/reports", "GET", undefined, auth)).status, 200);
   const appointments = await (await call("/api/admin/appointments", "GET", undefined, auth)).json();
   assert.equal(appointments.appointments[0].reference, appointment.reference);
   const checkedIn = await call("/api/admin/appointments/" + appointment.reference, "PATCH", {
@@ -84,6 +110,8 @@ test("isolated demo setup is repeatable and supports booking, admin, and walk-in
   assert.equal(walkIn.status, 201);
   assert.equal((await walkIn.json()).ticket.source, "Walk-in");
   assert.equal((await call("/api/admin/queue/call-next", "POST", {}, auth)).status, 200);
+  assert.equal((await call("/api/admin/auth/logout", "POST", {}, auth)).status, 200);
+  assert.equal((await call("/api/admin/appointments", "GET", undefined, auth)).status, 401);
   assert.equal(await seedDemo(seed), false);
   assert.equal(await Appointment.countDocuments(), 1);
   assert.equal(await mongoose.connection.db.collection("queuetickets").countDocuments(), 1);
