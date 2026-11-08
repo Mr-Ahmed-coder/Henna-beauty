@@ -1,5 +1,12 @@
-param([switch]$VerifyOnly)
+param([switch]$VerifyOnly, [switch]$Atlas)
 
+if ($Atlas -and $VerifyOnly) { throw 'Verify the hosted login through the Render API after deployment.' }
+$nodeArgs = @()
+if ($Atlas) {
+  $demoEnv = Join-Path $PSScriptRoot '../.env.atlas-demo'
+  if (-not (Test-Path -LiteralPath $demoEnv)) { throw 'Configure the private server/.env.atlas-demo file first.' }
+  $nodeArgs += "--env-file=$demoEnv"
+}
 $email = Read-Host 'Demo administrator email'
 
 try {
@@ -14,7 +21,7 @@ try {
   $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
   @{ email = $email; password = $password; verifyOnly = $VerifyOnly.IsPresent } |
     ConvertTo-Json -Compress |
-    node (Join-Path $PSScriptRoot 'demo-admin.js')
+    node @nodeArgs (Join-Path $PSScriptRoot 'demo-admin.js') $(if ($Atlas) { '--atlas' })
   $status = $LASTEXITCODE
 } finally {
   if ($secret) { $secret.Dispose() }
