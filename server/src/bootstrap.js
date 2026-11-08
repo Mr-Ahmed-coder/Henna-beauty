@@ -3,16 +3,12 @@ import { fileURLToPath } from "node:url";
 import mongoose from "mongoose";
 import { connectDatabase } from "./config/database.js";
 import { Staff, Session, initializeModels } from "./models/index.js";
-import { hashPassword } from "./security.js";
-dotenv.config({
-  path: fileURLToPath(new URL("../.env", import.meta.url)),
-  quiet: true,
-});
-export async function bootstrapAdmin({ name, email, password }) {
-  if (await Staff.exists({ bootstrap: true }))
+import { hashPassword, verifyPassword } from "./security.js";
+export async function bootstrapAdmin({ name, email, password }, { session = null } = {}) {
+  if (await Staff.exists({ bootstrap: true }).session(session))
     throw new Error("Initial administrator already exists");
   // A deterministic ID makes competing first-run attempts mutually exclusive.
-  return Staff.create({
+  const [administrator] = await Staff.create([{
     _id: "000000000000000000000001",
     name,
     email,
@@ -20,25 +16,36 @@ export async function bootstrapAdmin({ name, email, password }) {
     role: "Admin",
     active: true,
     bootstrap: true,
-  });
+  }], { session });
+  return administrator;
 }
-export async function resetBootstrapAdmin({ name, email, password }) {
+export async function resetBootstrapAdmin(
+  { name, email, password },
+  { session = null, requireNewPassword = false } = {},
+) {
   const administrator = await Staff.findOne({ bootstrap: true }).select(
     "+passwordHash",
-  );
+  ).session(session);
   if (!administrator) throw new Error("Initial administrator does not exist");
+  if (requireNewPassword && await verifyPassword(password, administrator.passwordHash)) {
+    throw new Error("Choose a new password");
+  }
   administrator.set({
-    name,
+    ...(name === undefined ? {} : { name }),
     email,
     passwordHash: await hashPassword(password),
     role: "Admin",
     active: true,
   });
-  await administrator.save();
-  await Session.deleteMany({ staff: administrator._id });
+  await administrator.save({ session });
+  await Session.deleteMany({ staff: administrator._id }, { session });
   return administrator;
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  dotenv.config({
+    path: fileURLToPath(new URL("../.env", import.meta.url)),
+    quiet: true,
+  });
   try {
     if (!process.env.MONGODB_URI)
       throw new Error("Configure MONGODB_URI first");
