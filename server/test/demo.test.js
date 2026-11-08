@@ -5,9 +5,10 @@ import mongoose from "mongoose";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { createApp } from "../src/app.js";
 import { Appointment } from "../src/models/booking.js";
-import { Staff } from "../src/models/index.js";
+import { Session, Staff } from "../src/models/index.js";
 import { hashPassword } from "../src/security.js";
 import { demoDatabaseName, seedDemo, setDemoAdministrator } from "../scripts/demo-data.js";
+import { verifyDemoLogin } from "../scripts/demo-login.js";
 
 test("isolated demo setup is repeatable and supports booking, admin, and walk-ins", async (t) => {
   const mongo = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
@@ -39,7 +40,13 @@ test("isolated demo setup is repeatable and supports booking, admin, and walk-in
   const tuesday = DateTime.now().setZone("America/Chicago")
     .plus({ weeks: 1 }).startOf("week").plus({ days: 1 }).set({ hour: 11 });
   let app;
-  const server = (await import("node:http")).createServer((req, res) => app(req, res))
+  const server = (await import("node:http")).createServer((req, res) => {
+    if (req.url === "/staff") {
+      res.end('<aside aria-label="Demo notice">DEMO</aside>');
+      return;
+    }
+    app(req, res);
+  })
     .listen(0, "127.0.0.1");
   await new Promise((ready) => server.once("listening", ready));
   t.after(() => new Promise((closed) => server.close(closed)));
@@ -108,6 +115,9 @@ test("isolated demo setup is repeatable and supports booking, admin, and walk-in
   assert.equal(wrong.status, 401);
   assert.equal((await wrong.json()).error, "Invalid email or password");
   assert.equal((await call("/api/admin/auth/me", "GET", undefined, oldAuth)).status, 401);
+  assert.equal(await verifyDemoLogin(origin, { ...replacement, password: initial.password }), false);
+  assert.equal(await verifyDemoLogin(origin, replacement), true);
+  assert.equal(await Session.countDocuments({ staff: initialId }), 0);
   const auth = await loginAsAdmin(replacement);
   assert.equal((await call("/api/admin/reports", "GET", undefined, auth)).status, 200);
   const appointments = await (await call("/api/admin/appointments", "GET", undefined, auth)).json();

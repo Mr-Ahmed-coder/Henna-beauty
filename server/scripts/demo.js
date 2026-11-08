@@ -6,10 +6,9 @@ import mongoose from "mongoose";
 import { createApp } from "../src/app.js";
 import { startLocalDatabase } from "./local-database.js";
 import { demoDatabaseName, demoDatabasePort, demoIsSeeded, demoReplicaSet, readDemoCatalogue, seedDemo } from "./demo-data.js";
+import { demoOrigin as origin } from "./demo-login.js";
 
-const host = "127.0.0.2";
-const port = 5180;
-const origin = `http://${host}:${port}`;
+const { hostname: host, port } = new URL(origin);
 const directory = new URL("../.local/demo/", import.meta.url);
 const assets = new URL("../../client/dist/", import.meta.url);
 let database;
@@ -55,7 +54,7 @@ try {
   preview.get(/.*/, (_req, res) => {
     res.send(html.replace("<body>", '<body><aside aria-label="Demo notice" style="background:#482735;color:#fff8f2;text-align:center;padding:.65rem 1rem;font:600 14px system-ui">DEMO · Sample services, staff, and hours. Use test customer details.</aside>'));
   });
-  listener = preview.listen(port, host);
+  listener = preview.listen(Number(port), host);
   await new Promise((ready, reject) => {
     listener.once("listening", ready);
     listener.once("error", reject);
