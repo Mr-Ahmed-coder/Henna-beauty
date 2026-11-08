@@ -10,7 +10,7 @@ The site displays a **DEMO** notice on public and staff pages. Use fictitious cu
 2. Enter your chosen email and a demo-only password of 12–128 characters. The password and confirmation prompts are masked. The script creates the demo administrator on first setup or updates the uniquely identified **Demo Administrator** in place and clears its sessions. Other staff accounts are preserved. Run it again if you forget the demo credentials.
 3. Wait for **Demo login and administrator dashboard verified**, then open [demo staff sign-in](http://127.0.0.2:5180/staff) and enter the same credentials. Look for the **DEMO** banner. The regular development portal on port 5173 uses a separate database.
 
-To privately check an existing password without resetting it, run `.\server\scripts\demo-admin.ps1 -VerifyOnly`. This checks the live demo login and dashboard, then closes the verification session.
+To privately check an existing password without resetting it, run `.\server\scripts\demo-admin.ps1 -VerifyOnly`. This checks the live demo login, dashboard, appointments, and services. It then signs out and verifies that the session has ended.
 
 ## Walk through the demo
 
