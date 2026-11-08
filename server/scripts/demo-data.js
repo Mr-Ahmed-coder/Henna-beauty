@@ -96,15 +96,15 @@ export async function setDemoAdministrator({ email, password }) {
     const state = await setup.findOneAndUpdate(marker, { $inc: { adminRevision: 1 } }, { session });
     if (!state) throw new Error("The demo setup marker is missing.");
 
-    const admins = await Staff.find({ role: "Admin" }).limit(2).session(session);
-    const administrator = admins[0];
-    if (admins.length > 1 || (administrator && (
-      state.adminId ? !administrator._id.equals(state.adminId) : administrator.name !== demoAdminName
-    ))) {
-      throw new Error("The demo has an unexpected administrator configuration. No account was changed.");
-    }
+    const identity = state.adminId ? { _id: state.adminId } : { name: demoAdminName };
+    const candidates = await Staff.find({ ...identity, role: "Admin" }).limit(2).session(session);
+    if (candidates.length > 1) throw new Error("The demo administrator identity is ambiguous.");
+    const administrator = candidates[0];
 
     if (!administrator) {
+      if (await Staff.exists({ $or: [identity, { role: "Admin" }] }).session(session)) {
+        throw new Error("The demo administrator could not be identified safely.");
+      }
       const [created] = await Staff.create([{
         ...credentials, role: "Admin", name: demoAdminName,
       }], { session });

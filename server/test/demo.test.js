@@ -6,6 +6,7 @@ import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { createApp } from "../src/app.js";
 import { Appointment } from "../src/models/booking.js";
 import { Staff } from "../src/models/index.js";
+import { hashPassword } from "../src/security.js";
 import { demoDatabaseName, seedDemo, setDemoAdministrator } from "../scripts/demo-data.js";
 
 test("isolated demo setup is repeatable and supports booking, admin, and walk-ins", async (t) => {
@@ -86,10 +87,22 @@ test("isolated demo setup is repeatable and supports booking, admin, and walk-in
     };
   }
   const oldAuth = await loginAsAdmin(initial);
+  // Older demo databases have no saved administrator ID and may have other admins.
+  await mongoose.connection.db.collection("demosetup").updateOne(
+    { _id: "salon-demo-v1" }, { $unset: { adminId: "" } },
+  );
+  const otherAdmin = await Staff.create({
+    name: "Other Demo Staff",
+    role: "Admin",
+    email: "other@example.test",
+    passwordHash: await hashPassword("test-other-demo-admin"),
+  });
+  const otherBefore = await Staff.findById(otherAdmin.id).select("+passwordHash").lean();
   await assert.rejects(setDemoAdministrator({ ...replacement, email: "artist@salon-demo.test" }), { code: 11000 });
   assert.equal((await call("/api/admin/auth/me", "GET", undefined, oldAuth)).status, 200);
   await setDemoAdministrator(replacement);
-  assert.equal(await Staff.countDocuments({ role: "Admin" }), 1);
+  assert.equal(await Staff.countDocuments({ role: "Admin" }), 2);
+  assert.deepEqual(await Staff.findById(otherAdmin.id).select("+passwordHash").lean(), otherBefore);
   assert.equal((await signIn(initial)).status, 401);
   const wrong = await signIn({ ...replacement, password: initial.password });
   assert.equal(wrong.status, 401);

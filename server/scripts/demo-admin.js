@@ -24,7 +24,7 @@ try {
     serverSelectionTimeoutMS: 3000, autoCreate: false, autoIndex: false,
   });
 
-  failure = "The demo administrator could not be updated. Check that the demo is initialized and has only its original administrator.";
+  failure = "The demo administrator could not be updated. Check that the demo is initialized and that its Demo Administrator account can be uniquely identified.";
   await setDemoAdministrator({ email, password });
   console.log("Demo administrator saved. Sign in at http://127.0.0.2:5180/staff");
 } catch (error) {
