@@ -131,7 +131,7 @@ header {
   gap: 34px;
   font-size: 13px;
 }
-.navigation > a:not(.button, .staff-link) {
+.navigation > a:not(.button) {
   padding: 9px 0;
   border-bottom: 1px solid transparent;
 }
@@ -160,21 +160,6 @@ header {
 .nav-appointment {
   margin-left: 12px;
   padding: 12px 20px;
-}
-.staff-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 9px 14px;
-  border: 1px solid #a9814c;
-  background: #faf7f0;
-  color: #482735;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.staff-link:hover {
-  background: #f0e2df;
 }
 .menu-toggle {
   display: none;
@@ -586,6 +571,13 @@ footer {
   align-items: center;
   gap: 7px;
 }
+.team-access {
+  align-self: flex-start;
+  padding: 6px 0;
+  color: #482735;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .page-heading {
   padding-block: 75px 40px;
   text-align: center;
@@ -877,7 +869,7 @@ main:focus {
     align-items: stretch;
     gap: 8px;
   }
-  .navigation > a:not(.button, .staff-link) {
+  .navigation > a:not(.button) {
     padding: 10px;
   }
   .nav-appointment {

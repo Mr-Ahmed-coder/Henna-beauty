@@ -282,7 +282,7 @@ export default function Admin() {
             <button className="button" disabled={busy}>
               {busy ? "Signing in…" : "Log in"}
             </button>
-            <Link to="/">Return to public website</Link>
+            <Link to="/">Back to home</Link>
           </form>
         ) : (
           <>

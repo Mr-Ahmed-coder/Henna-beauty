@@ -15,40 +15,8 @@ export function Brand() {
 }
 export default function Layout() {
   const [open, setOpen] = useState(false);
-  const [hasStaffSession, setHasStaffSession] = useState(false);
   const { pathname } = useLocation();
   const main = useRef(null);
-
-  useEffect(() => {
-    let controller;
-
-    async function checkStaffSession() {
-      controller?.abort();
-      const request = new AbortController();
-      controller = request;
-
-      try {
-        const response = await fetch("/api/admin/auth/me", {
-          credentials: "same-origin",
-          cache: "no-store",
-          signal: request.signal,
-        });
-        const session = response.ok ? await response.json() : null;
-        if (!request.signal.aborted) {
-          setHasStaffSession(Boolean(session?.staff?.id));
-        }
-      } catch {
-        if (!request.signal.aborted) setHasStaffSession(false);
-      }
-    }
-
-    checkStaffSession();
-    window.addEventListener("focus", checkStaffSession);
-    return () => {
-      window.removeEventListener("focus", checkStaffSession);
-      controller?.abort();
-    };
-  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -111,9 +79,6 @@ export default function Layout() {
             <Link to="/track" onClick={() => setOpen(false)}>
               My Booking
             </Link>
-            <Link to="/admin" className="staff-link" onClick={() => setOpen(false)}>
-              {hasStaffSession ? "Dashboard" : "Staff Login"}
-            </Link>
           </nav>
         </div>
       </header>
@@ -145,6 +110,7 @@ export default function Layout() {
           <span>
             © {new Date().getFullYear()} Henna & Beauty
           </span>
+          <Link className="team-access" to="/staff">Team Access</Link>
         </div>
       </footer>
     </>

@@ -1,15 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, Clock3 } from "lucide-react";
-import { bookingApi, money } from "../booking/api";
-
-function availabilityMessage(service) {
-  if (!service.qualifiedArtistCount)
-    return "Not available online yet — no artist is assigned to this service.";
-  if (!service.scheduledArtistCount)
-    return "Not available online yet — an artist needs booking hours for this service.";
-  return "Availability is checked when you choose a date.";
-}
+import { bookingApi, money, serviceUnavailableReason } from "../booking/api";
 
 export default function ServiceCatalogue({ limit }) {
   const [catalog, setCatalog] = useState(null);
@@ -65,7 +57,7 @@ export default function ServiceCatalogue({ limit }) {
               </Link>
             ) : (
               <p className="catalogue-unavailable">
-                {availabilityMessage(service)}
+                {serviceUnavailableReason(service)}. Online booking is unavailable for this service.
               </p>
             )}
           </div>

@@ -1,4 +1,4 @@
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import Services from "./pages/Services";
@@ -12,6 +12,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/admin/*" element={<Admin />} />
+      <Route path="/staff" element={<Navigate to="/admin" replace />} />
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="services" element={<Services />} />

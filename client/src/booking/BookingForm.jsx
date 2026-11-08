@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { bookingApi, money, formatTime } from "./api";
+import { bookingApi, money, formatTime, serviceUnavailableReason } from "./api";
 import "./booking.css";
 import { slotTime } from "../localization";
 export default function BookingForm({
@@ -221,7 +221,7 @@ export default function BookingForm({
                     <option key={s._id} value={s._id} disabled={!s.bookable}>
                       {s.name} · {s.durationMinutes} min ·{" "}
                       {money(s.priceMinor, catalog.currency)}
-                      {!s.bookable ? " · Not available" : ""}
+                      {!s.bookable && ` · ${serviceUnavailableReason(s)}`}
                     </option>
                   ))}
                 </select>
@@ -229,11 +229,13 @@ export default function BookingForm({
               {!catalog.services.length && (
                 <p>No active services are available for booking yet.</p>
               )}
+              {!reservation && catalog.services.length > 0 &&
+                !catalog.services.some((item) => item.bookable) && (
+                  <p role="status">Online booking needs a qualified artist with working hours. Please check back once the salon has updated its schedule.</p>
+              )}
               {selected && !selected.bookable && (
                 <p className="booking-note" role="status">
-                  {!selected.qualifiedArtistCount
-                    ? "No artist is assigned to this service yet."
-                    : "An artist needs booking hours for this service before you can book online."}
+                  {serviceUnavailableReason(selected)}.
                 </p>
               )}
               {selected && (

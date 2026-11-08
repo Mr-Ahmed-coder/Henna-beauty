@@ -19,6 +19,11 @@ export async function bookingApi(
   return data;
 }
 export { formatTime, money } from "../localization";
+export function serviceUnavailableReason(service) {
+  return service.qualifiedArtistCount
+    ? "No booking hours for this service"
+    : "No qualified artist assigned";
+}
 import { useEffect, useState } from "react";
 export function useBookingPolling(path, token, revision = 0) {
   const [data, setData] = useState(null),
