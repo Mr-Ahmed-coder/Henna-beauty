@@ -8,3 +8,12 @@ coverage/
 *.log
 artifacts/
 server/.local/
+admin-login*.json
+development-admin*.json
+credentials.json
+backups/
+dump/
+*.bson
+*.bson.gz
+*.archive
+*.archive.gz
