@@ -24,6 +24,29 @@ The production process rejects missing database/origin configuration, non-HTTPS 
 
 At the trusted edge, replace/sanitize forwarded headers and prevent bypass access to the API. A wrong trust-proxy setting can cause rate limits to group all users under one IP or trust spoofed client addresses. Verify this in staging. Limits currently use process-local memory: use one API instance initially and enforce additional distributed limits at the trusted edge before adding replicas. The database transaction lock protects booking correctness across instances, but it does not make rate limits distributed. Login is limited to 10 requests/15 minutes/IP; public creation to 20/hour/IP, with separate general API limits. Shared NAT customers can hit these limits. Phone numbers are not verified identity; assess abuse traffic before public launch. Do not enable a public development server.
 
+## Render backend
+
+Verify the intended Atlas database before creating the public web service. Use a dedicated staging database for the first verification so startup can initialize indexes and run the existing notification worker without touching business records. The read-only Atlas check tests connectivity and a snapshot transaction. Put `ATLAS_MONGODB_URI` in the ignored `server/.env.atlas` file with the exact database name, then run `node --env-file=server/.env.atlas server/scripts/check-atlas.js` from the repository root. Confirm the target and restrict Atlas network access to the verifying client and the selected [Render outbound ranges](https://render.com/docs/outbound-ip-addresses). A successful local check still requires a Render-side readiness check.
+
+Create a Node.js Web Service from the GitHub repository on `main`. Leave Root Directory blank so the build can use the root npm workspace and lockfile. Use the Free plan for backend verification. Free instances can sleep while idle, which delays requests and pauses the in-process notification worker. [Render web services](https://render.com/docs/web-services) · [Free plan limits](https://render.com/docs/free)
+
+| Render setting | Value |
+| --- | --- |
+| Build Command | `npm ci --omit=dev --workspace server --include-workspace-root=false` |
+| Start Command | `npm run start --workspace server` |
+| Health Check Path | `/api/ready` |
+| Auto-Deploy | Off during verification |
+| `NODE_VERSION` | `24.x` |
+| `SKIP_INSTALL_DEPS` | `true` so the build command controls installation |
+| `NODE_ENV` | `production` |
+| `HOST` | `0.0.0.0` |
+| `PORT` | Use Render's injected value |
+| `MONGODB_URI` | Set the verified staging URI privately in the Render dashboard |
+| `CLIENT_ORIGIN` | Exact HTTPS origin. For backend-only verification, use the service's HTTPS origin. Use the intended same-origin frontend and API gateway before launch. |
+| `TRUST_PROXY_HOPS` | Leave at `0` until the actual edge and client-IP behavior are verified |
+
+On the assigned HTTPS service URL, verify `GET /api/health` reports connected, `GET /api/ready` returns 200 and `bookingsReady: true`, and anonymous `GET /api/admin/auth/me` returns 401. Check that an unapproved origin is rejected for staff and booking writes. Verify login, Secure/HttpOnly/SameSite=Strict cookie attributes, authorized reads, and logout with an already approved staging account if one exists. Keep account bootstrap and database migration separate. Staff browser access requires the frontend and API to share an HTTPS origin. [Render HTTP health checks](https://render.com/docs/health-checks)
+
 ## Hosted MongoDB and initial administration
 
 Use a writable MongoDB replica set or supported sharded cluster with transaction support, TLS, authentication, and network restrictions to the API. Keep staging and production databases/users separate. Grant the application only its required database access (including creating its collections/indexes during setup); do not use cluster administrator credentials. Ensure `hello`/`ping` and majority transactions work with the chosen provider. Back up before first launch. Model initialization builds required unique indexes; review existing data for duplicate staff emails, booking references, active queue phone hashes, and schedules before approving launch against an existing database. No migration is provided or executed here.
