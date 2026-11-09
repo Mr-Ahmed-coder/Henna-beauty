@@ -24,6 +24,16 @@ test("production configuration fails closed and supports explicit proxy topology
   });
   assert.equal(missing.status, 1, "Production must not fall back to local development .env values");
   assert.ok(!missing.stdout.includes("Salon API listening"));
+  assert.match(missing.stderr, /failed during server configuration/);
+
+  const invalidUri = "invalid://private-value@example.test";
+  const invalidDatabase = spawnSync(process.execPath, [fileURLToPath(new URL("../src/index.js", import.meta.url))], {
+    windowsHide: true, encoding: "utf8", timeout: 10000,
+    env: { ...process.env, ...environment, MONGODB_URI: invalidUri },
+  });
+  assert.equal(invalidDatabase.status, 1);
+  assert.match(invalidDatabase.stderr, /failed during MongoDB connection.*MONGODB_URI format/);
+  assert.doesNotMatch(invalidDatabase.stdout + invalidDatabase.stderr, /private-value|example\.test/);
 });
 
 test("actual production entry point starts with replica set, health checks and secure staff sessions", async (t) => {
