@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { PageHeading } from "../components/Shared";
 import BookingForm from "./BookingForm";
-import { bookingApi, formatTime, money, useBookingPolling } from "./api";
+import { bookingApi, formatTime, useBookingPolling } from "./api";
 import PrivateUpdates from "../notifications/PrivateUpdates";
 export default function BookingPage() {
   const location = useLocation(),
@@ -117,7 +117,7 @@ export default function BookingPage() {
                   <dt>Duration</dt>
                   <dd>{details.durationMinutes} minutes</dd>
                   <dt>Price</dt>
-                  <dd>{money(details.priceMinor, details.currency)}</dd>
+                  <dd>Price available in salon</dd>
                   <dt>Customer</dt>
                   <dd>
                     {details.customerName} · {details.phone}

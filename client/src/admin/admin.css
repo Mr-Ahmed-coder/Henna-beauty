@@ -1,22 +1,24 @@
 .admin-shell {
   min-height: 100vh;
-  background: #faf7f0;
+  background: #fbf9f4;
 }
 .admin-header {
   padding: 20px max(20px, 5vw);
   display: flex;
   align-items: center;
   gap: 24px;
-  border-bottom: 1px solid #dbc8b9;
+  border-bottom: 1px solid #d4ded5;
   flex-wrap: wrap;
 }
 .admin-header > a {
   font-family: "Playfair Display", serif;
   font-size: 24px;
+  color: #1e3827;
 }
 .admin-header > span {
   flex: 1;
   font-size: 13px;
+  color: #556758;
 }
 .admin-main {
   max-width: 1100px;
@@ -26,20 +28,29 @@
 .admin-main h1 {
   font-size: clamp(32px, 5vw, 50px);
   margin: 14px 0 20px;
+  color: #1e3827;
 }
 .admin-main h2 {
   font-size: 30px;
+  color: #1e3827;
 }
 .admin-main p {
   margin: 12px 0;
   font-size: 14px;
+  color: #556758;
 }
 .admin-shell button:not(.button) {
-  border: 1px solid #b99d88;
-  background: #fffaf3;
-  color: #482735;
+  border: 1px solid #c7d2c9;
+  background: #ffffff;
+  color: #213527;
   padding: 10px 16px;
   min-height: 44px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.admin-shell button:not(.button):hover {
+  background: #eef5ef;
+  border-color: #366b44;
 }
 .admin-shell button:disabled {
   opacity: 0.55;
@@ -63,19 +74,26 @@
   flex-direction: column;
   gap: 6px;
   font-size: 13px;
+  color: #213527;
 }
 .admin-form input,
 .admin-form select,
 .admin-form textarea {
-  background: #fffdfa;
-  border: 1px solid #bca897;
-  color: #482735;
+  background: #ffffff;
+  border: 1px solid #c7d2c9;
+  color: #213527;
   padding: 11px;
   min-width: 0;
   width: 100%;
   font: inherit;
   min-height: 44px;
   border-radius: 2px;
+}
+.admin-form input:focus,
+.admin-form select:focus,
+.admin-form textarea:focus {
+  outline: 2px solid #366b44;
+  outline-offset: 1px;
 }
 .admin-form textarea {
   resize: vertical;
@@ -84,7 +102,7 @@
 .admin-form input[type="checkbox"] {
   width: 22px;
   min-height: 22px;
-  accent-color: #482735;
+  accent-color: #366b44;
 }
 .login-form {
   max-width: 440px;
@@ -97,7 +115,7 @@
   align-items: center;
 }
 .admin-tab-label {
-  color: #8b6a56;
+  color: #4b6851;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -111,8 +129,9 @@
   text-transform: capitalize;
 }
 .admin-tabs button[aria-current="page"] {
-  background: #482735;
-  color: #fff8f2;
+  background: #366b44;
+  color: #ffffff;
+  border-color: #366b44;
 }
 .admin-section-title {
   display: flex;
@@ -123,8 +142,8 @@
 }
 .editor-form {
   padding: 25px;
-  background: #f0e3dc;
-  border: 1px solid #ddc8bc;
+  background: #eef5ef;
+  border: 1px solid #d0ded3;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .editor-form h3,
@@ -147,15 +166,16 @@
   align-items: center;
   gap: 20px;
   padding: 22px;
-  border: 1px solid #ddcfc2;
-  background: #fffaf3;
+  border: 1px solid #d4ded5;
+  background: #ffffff;
   overflow-wrap: anywhere;
 }
 .admin-records h3 {
   font-size: 23px;
+  color: #1e3827;
 }
 .admin-records small {
-  color: #8c674d;
+  color: #556758;
 }
 .hours-grid {
   display: grid;
@@ -163,17 +183,20 @@
   gap: 15px;
 }
 .hours-grid fieldset {
-  border: 1px solid #cdb8a5;
+  border: 1px solid #d4ded5;
   padding: 15px;
   display: grid;
   gap: 12px;
   min-width: 0;
+  background: #ffffff;
 }
 .hours-grid legend {
   padding: 0 6px;
+  color: #1e3827;
+  font-weight: 500;
 }
 .admin-role {
-  color: #775366;
+  color: #4b6851;
 }
 .operations-summary {
   display: grid;
@@ -184,13 +207,13 @@
 .report-panel { margin-top: 20px; min-width: 0; }
 .report-scroll { overflow-x: auto; max-width: 100%; }
 .report-scroll table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.report-scroll th, .report-scroll td { text-align: left; padding: 12px; border-bottom: 1px solid #ddcfc2; }
-.report-scroll th { font-weight: 600; }
+.report-scroll th, .report-scroll td { text-align: left; padding: 12px; border-bottom: 1px solid #d4ded5; }
+.report-scroll th { font-weight: 600; color: #1e3827; }
 .operations-summary article,
 .operations-panel,
 .admin-guidance {
-  border: 1px solid #ddcfc2;
-  background: #fffaf3;
+  border: 1px solid #d4ded5;
+  background: #ffffff;
   padding: 20px;
 }
 .operations-summary article {
@@ -198,7 +221,7 @@
   gap: 7px;
 }
 .operations-summary span {
-  color: #775366;
+  color: #4b6851;
   font-size: 12px;
 }
 .operations-summary strong {
@@ -206,14 +229,15 @@
   font-size: 38px;
   font-weight: 400;
   line-height: 1;
+  color: #1e3827;
 }
 .operations-summary button,
 .operations-panel button {
   justify-self: start;
   border: 0;
   background: transparent;
-  border-bottom: 1px solid #cdb8a5;
-  color: #482735;
+  border-bottom: 1px solid #7ea887;
+  color: #213527;
   min-height: 32px;
   padding: 0;
   font-size: 12px;
@@ -226,14 +250,15 @@
 .operations-panel h3,
 .admin-guidance h3 {
   font-size: 23px;
+  color: #1e3827;
 }
 .operations-row {
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  border-top: 1px solid #eadfd3;
+  border-top: 1px solid #e3ece5;
   padding: 13px 0;
-  color: #715f61;
+  color: #556758;
   font-size: 12px;
 }
 .operations-row span {
@@ -244,13 +269,13 @@
   text-align: right;
 }
 .operations-row strong {
-  color: #482735;
+  color: #1e3827;
   font-weight: 600;
 }
 .admin-guidance {
   margin-top: 20px;
-  border-left: 3px solid #a9814c;
-  background: #f5e9df;
+  border-left: 3px solid #366b44;
+  background: #eef5ef;
 }
 @media (max-width: 650px) {
   .admin-records article {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { PageHeading } from "../components/Shared";
-import { formatTime, money } from "../booking/api";
+import { formatTime } from "../booking/api";
 import { queueApi, useQueuePolling } from "./api";
 import JoinQueue from "./JoinQueue";
 import PrivateUpdates from "../notifications/PrivateUpdates";
@@ -80,7 +80,7 @@ function TicketView({ reference, token }) {
                 {ticket.serviceName} · {ticket.durationMinutes} min
               </dd>
               <dt>Price</dt>
-              <dd>{money(ticket.priceMinor, ticket.currency)}</dd>
+              <dd>Price available in salon</dd>
               <dt>Position</dt>
               <dd>
                 {ticket.position

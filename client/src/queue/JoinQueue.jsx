@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { queueApi, useQueuePolling } from "./api";
-import { money } from "../booking/api";
 import { calendarDate } from "../localization";
 import "../booking/booking.css";
 import "./queue.css";
@@ -90,8 +89,7 @@ export default function JoinQueue({ session, onJoined }) {
                 <option value="">Choose a service</option>
                 {data.services.map((s) => (
                   <option key={s._id} value={s._id} disabled={!eligible(s)}>
-                    {s.name} · {s.durationMinutes} min ·{" "}
-                    {money(s.priceMinor, data.currency)}
+                    {s.name} · {s.durationMinutes} min
                     {!eligible(s) ? " · Unavailable now" : ""}
                   </option>
                 ))}
@@ -129,7 +127,7 @@ export default function JoinQueue({ session, onJoined }) {
                 required
                 type="tel"
                 maxLength={25}
-                placeholder="+1 (612) 555-0123"
+                placeholder="+1 (612) 800-4944"
                 autoComplete="tel"
                 value={customer.phone}
                 onChange={(e) =>

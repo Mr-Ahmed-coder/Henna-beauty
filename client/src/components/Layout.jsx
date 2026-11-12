@@ -1,18 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
-export function Brand() {
+
+export function Brand({ className = "brand" }) {
   return (
-    <Link className="brand" to="/" aria-label="Henna and Beauty home">
-      <span className="brand-mark" aria-hidden="true">
-        ✳
-      </span>
-      <span>
-        henna & beauty<small>MINNESOTA</small>
-      </span>
+    <Link className={className} to="/" aria-label="Amallina Beauty Salon home">
+      <img
+        src="/images/amallina-logo.png"
+        alt="Amallina Beauty Salon"
+        className="brand-logo"
+        width="118"
+        height="60"
+        decoding="async"
+      />
     </Link>
   );
 }
+
 export default function Layout() {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
@@ -20,9 +24,10 @@ export default function Layout() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    document.title = `${pathname.startsWith("/appointments") ? pathname.endsWith("/manage") ? "My Booking" : "Book Appointment" : pathname.startsWith("/queue") ? "Queue" : { "/": "Home", "/services": "Services", "/about": "About", "/contact": "Contact", "/track": "My Booking" }[pathname] || "Page not found"} · Henna & Beauty Preview`;
+    document.title = `${pathname.startsWith("/appointments") ? pathname.endsWith("/manage") ? "My Booking" : "Book Appointment" : pathname.startsWith("/queue") ? "Queue" : { "/": "Home", "/services": "Services", "/about": "About", "/contact": "Contact", "/track": "My Booking" }[pathname] || "Page not found"} · Amallina Beauty Salon`;
     main.current?.focus();
   }, [pathname]);
+
   return (
     <>
       <a
@@ -37,7 +42,13 @@ export default function Layout() {
         Skip to content
       </a>
       <div className="preview-banner">
-        Preview website · Salon details are awaiting confirmation.
+        <span>Amallina Beauty Salon</span>
+        <span>·</span>
+        <span>2910 Pillsbury Ave #263, Minneapolis, MN</span>
+        <span>·</span>
+        <a href="tel:+16128004944" style={{ color: "inherit", textDecoration: "underline" }}>
+          +1 (612) 800-4944
+        </a>
       </div>
       <header>
         <div className="nav-wrap">
@@ -89,15 +100,23 @@ export default function Layout() {
         <div className="footer-top">
           <div>
             <Brand />
-            <p>
-              Henna & beauty for Minnesota’s Somali community.
+            <p className="footer-tagline">
+              Amallina Beauty Salon · Henna artistry & beauty care in Minneapolis, Minnesota.
             </p>
+            <div className="footer-contact">
+              <p>2910 Pillsbury Ave #263, Minneapolis, MN 55408</p>
+              <p>
+                <a href="tel:+16128004944">+1 (612) 800-4944</a>
+                <span> · </span>
+                <a href="mailto:qurux21b@gmail.com">qurux21b@gmail.com</a>
+              </p>
+            </div>
           </div>
           <div>
             <h3>Explore</h3>
             <Link to="/services">Services</Link>
             <Link to="/about">About</Link>
-            <Link to="/contact">Contact & location</Link>
+            <Link to="/contact">Contact & Location</Link>
           </div>
           <div>
             <h3>Plan your visit</h3>
@@ -108,7 +127,7 @@ export default function Layout() {
         </div>
         <div className="footer-bottom">
           <span>
-            © {new Date().getFullYear()} Henna & Beauty
+            © {new Date().getFullYear()} Amallina Beauty Salon. All rights reserved.
           </span>
           <Link className="team-access" to="/staff">Team Access</Link>
         </div>

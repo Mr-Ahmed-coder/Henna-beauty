@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { bookingApi, money, formatTime, serviceUnavailableReason } from "./api";
+import { bookingApi, formatTime, serviceUnavailableReason } from "./api";
 import "./booking.css";
 import { slotTime } from "../localization";
 export default function BookingForm({
@@ -163,10 +163,9 @@ export default function BookingForm({
                     <dd>
                       {customer.customerName} · {customer.phone}
                     </dd>
-                    <dt>Price</dt>
+                    <dt>Duration & Price</dt>
                     <dd>
-                      {money(selected.priceMinor, catalog.currency)} ·{" "}
-                      {selected.durationMinutes} minutes
+                      {selected.durationMinutes} minutes · Price available in salon
                     </dd>
                   </>
                 )}
@@ -219,8 +218,7 @@ export default function BookingForm({
                   <option value="">Select a service</option>
                   {catalog.services.map((s) => (
                     <option key={s._id} value={s._id} disabled={!s.bookable}>
-                      {s.name} · {s.durationMinutes} min ·{" "}
-                      {money(s.priceMinor, catalog.currency)}
+                      {s.name} · {s.durationMinutes} min
                       {!s.bookable && ` · ${serviceUnavailableReason(s)}`}
                     </option>
                   ))}
@@ -243,8 +241,7 @@ export default function BookingForm({
                   <p className="eyebrow">{selected.category || "General"}</p>
                   {selected.description && <p>{selected.description}</p>}
                   <p>
-                    {selected.durationMinutes} minutes ·{" "}
-                    {money(selected.priceMinor, catalog.currency)}
+                    {selected.durationMinutes} minutes · Price available in salon
                   </p>
                 </div>
               )}
@@ -329,7 +326,7 @@ export default function BookingForm({
                     <input
                       required
                       type="tel"
-                      placeholder="+1 (612) 555-0123"
+                      placeholder="+1 (612) 800-4944"
                       autoComplete="tel"
                       maxLength={25}
                       value={customer.phone}

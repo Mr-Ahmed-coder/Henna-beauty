@@ -1,17 +1,19 @@
 .queue-status {
   font-family: "Playfair Display", serif;
-  color: #482735;
+  color: #1e3827;
   font-size: 26px !important;
 }
 .queue-board-card {
   padding: 24px;
-  background: #fffaf3;
-  border: 1px solid #ddc8bc;
+  background: #ffffff;
+  border: 1px solid #d4ded5;
   margin: 18px 0;
   overflow-wrap: anywhere;
+  box-shadow: 0 2px 8px rgba(30, 56, 39, 0.03);
 }
 .queue-board-card h3 {
   font-size: 23px;
+  color: #1e3827;
 }
 .queue-board-card p {
   white-space: pre-wrap;
@@ -23,9 +25,9 @@
   margin: 22px 0;
 }
 .queue-board-tools select {
-  border: 1px solid #bca897;
-  background: #fffaf3;
-  color: #482735;
+  border: 1px solid #c7d2c9;
+  background: #ffffff;
+  color: #213527;
   padding: 10px;
   max-width: 100%;
   min-height: 44px;
@@ -42,19 +44,20 @@
   gap: 14px;
   flex-wrap: wrap;
   font-size: 13px;
+  color: #213527;
 }
 .queue-policy-form input:not([type="checkbox"]) {
   padding: 11px;
-  border: 1px solid #bca897;
-  background: #fffaf3;
-  color: #482735;
+  border: 1px solid #c7d2c9;
+  background: #ffffff;
+  color: #213527;
   min-height: 44px;
   max-width: 100%;
 }
 .queue-policy-form input[type="checkbox"] {
   width: 19px;
   height: 19px;
-  accent-color: #482735;
+  accent-color: #366b44;
 }
 .queue-ui dl {
   overflow-wrap: anywhere;
@@ -78,16 +81,8 @@
   }
   .queue-board-tools {
     flex-direction: column;
-    align-items: stretch;
   }
-  .queue-board-tools > * {
-    width: 100%;
-    min-width: 0;
-  }
-  .queue-policy-form label {
-    align-items: start;
-  }
-  .queue-policy-form input:not([type="checkbox"]) {
+  .queue-board-tools select {
     width: 100%;
   }
 }

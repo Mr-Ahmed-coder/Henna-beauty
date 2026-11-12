@@ -139,7 +139,10 @@ export default function Admin() {
         );
         setSettings(
           salon || {
-            name: "Henna & Beauty (placeholder)",
+            name: "Amallina Beauty Salon",
+            phone: "+1 (612) 800-4944",
+            address: "2910 Pillsbury Ave #263, Minneapolis, MN 55408",
+            email: "qurux21b@gmail.com",
             ...salonDefaults,
             hours: days.map((_, day) => ({
               day,
@@ -211,7 +214,7 @@ export default function Admin() {
   return (
     <div className="admin-shell">
       <header className="admin-header">
-        <Link to="/">✳ henna & beauty</Link>
+        <Link to="/">← Amallina Beauty Salon</Link>
         <span>Staff administration</span>
         {session && (
           <button
