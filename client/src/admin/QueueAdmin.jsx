@@ -134,6 +134,8 @@ export default function QueueAdmin({ session }) {
     [pending, setPending] = useState(null),
     [privateLink, setPrivateLink] = useState("");
   const desk = ["Admin", "Receptionist"].includes(session.staff.role);
+  const activeTickets = data?.tickets.filter((ticket) => ticket.active) ?? [];
+  const finishedTickets = data?.tickets.filter((ticket) => !ticket.active) ?? [];
   useEffect(() => {
     let active = true;
     queueApi("/api/admin/staff")
@@ -178,13 +180,13 @@ export default function QueueAdmin({ session }) {
   }
   return (
     <section>
-      <h2>Today’s hybrid queue</h2>
+      <h2>Queue</h2>
       <div className="queue-board-tools">
-        <button onClick={() => tab("board")}>Queue board</button>
-        {desk && (
-          <button onClick={() => tab("walk-in")}>Register walk-in</button>
+        {mode !== "board" && <button onClick={() => tab("board")}>Back to queue</button>}
+        {desk && mode !== "walk-in" && (
+          <button onClick={() => tab("walk-in")}>Add walk-in</button>
         )}
-        {session.staff.role === "Admin" && (
+        {session.staff.role === "Admin" && mode !== "policy" && (
           <button onClick={() => tab("policy")}>Queue rules</button>
         )}
       </div>
@@ -262,13 +264,6 @@ export default function QueueAdmin({ session }) {
             {calendarDate(data.date)} · {data.timezone} · {data.waitingCount} waiting ·{" "}
             {data.isOpen ? "Salon open" : "Salon closed"}
           </p>
-          <p className="booking-note">
-            Updates every 10 seconds. Last updated{" "}
-            {formatTime(data.serverNow, data.timezone)}. Oldest eligible ticket
-            is called first; qualifications, breaks, and protected appointments
-            can cause later eligible tickets to be served sooner. Waiting
-            estimates are provisional.
-          </p>
           {desk && (
             <div className="queue-board-tools">
               <select
@@ -285,7 +280,7 @@ export default function QueueAdmin({ session }) {
               </select>
               <button
                 className="button"
-                disabled={busy || !data.isOpen || !data.policy.enabled}
+                disabled={busy || !!pollError || !data.isOpen || !data.policy.enabled || !data.waitingCount}
                 onClick={() =>
                   act(
                     "/api/admin/queue/call-next",
@@ -294,12 +289,12 @@ export default function QueueAdmin({ session }) {
                   )
                 }
               >
-                {busy ? "Assigning…" : "Call next eligible customer"}
+                Call next
               </button>
             </div>
           )}
-          {!data.tickets.length && <p>No queue tickets to show today.</p>}
-          {data.tickets.map((ticket) => (
+          {!activeTickets.length && <p>No active tickets.</p>}
+          {activeTickets.map((ticket) => (
             <article className="queue-board-card" key={ticket.reference}>
               <p className="eyebrow">
                 Q{String(ticket.number).padStart(3, "0")} · {ticket.source} ·{" "}
@@ -356,7 +351,7 @@ export default function QueueAdmin({ session }) {
                         )
                       }
                     >
-                      Check in customer
+                      Mark arrived
                     </button>
                   )}
                 {ticket.status === "Called" && ticket.checkedInAt && (
@@ -409,6 +404,18 @@ export default function QueueAdmin({ session }) {
               </div>
             </article>
           ))}
+          {finishedTickets.length > 0 && (
+            <details>
+              <summary>Finished tickets ({finishedTickets.length})</summary>
+              <ul>
+                {finishedTickets.map((ticket) => (
+                  <li key={ticket.reference}>
+                    Q{String(ticket.number).padStart(3, "0")} · {ticket.customerName} · {ticket.serviceName} · {ticket.status}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
         </>
       )}
     </section>

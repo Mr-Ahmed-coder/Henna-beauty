@@ -1,174 +1,83 @@
 import { useState } from "react";
 import { queueApi, useQueuePolling } from "./api";
-import { calendarDate } from "../localization";
 import "../booking/booking.css";
 import "./queue.css";
+
 export default function JoinQueue({ session, onJoined }) {
-  const { data, error: loadError } = useQueuePolling("/api/queue/catalog"),
-    [service, setService] = useState(""),
-    [customer, setCustomer] = useState({
-      customerName: "",
-      phone: "+1 ",
-      notes: "",
-    }),
-    [inAppUpdates, setInAppUpdates] = useState(true),
-    [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
+  const { data, error: loadError } = useQueuePolling("/api/queue/catalog");
+  const [service, setService] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const eligible = (item) => session ? item.walkInBookable : item.bookable;
+  const services = data?.services ?? [];
+  const selected = services.find((item) => item._id === service);
+  const unavailable = !data ? "" :
+    !data.policy.enabled ? "The queue is paused. Please check with reception." :
+    !session && !data.policy.remoteEnabled ? "Online queue entry is paused. Please check with reception." :
+    !data.isOpen ? "The queue is closed. You can join during salon hours (Central Time)." :
+    !data.acceptingEntries ? "Queue entry has ended for today." :
+    !services.some(eligible) ? "No qualified artist has enough time for a queue service today." : "";
+
   async function submit(event) {
     event.preventDefault();
+    if (busy || unavailable || loadError || !selected || !eligible(selected)) return;
     setBusy(true);
     setError("");
     try {
-      onJoined(
-        await queueApi(
-          session ? "/api/admin/queue/tickets" : "/api/queue/tickets",
-          {
-            method: "POST",
-            session,
-            body: {
-              service,
-              ...customer,
-              notificationPreferences: {
-                inApp: inAppUpdates,
-                sms: false,
-                whatsapp: false,
-              },
-            },
-          },
-        ),
-      );
+      const digits = phone.replace(/[ ().-]/g, "");
+      const normalized = /^\d{10}$/.test(digits) ? "+1" + digits :
+        /^1\d{10}$/.test(digits) ? "+" + digits : phone.trim();
+      onJoined(await queueApi(
+        session ? "/api/admin/queue/tickets" : "/api/queue/tickets",
+        { method: "POST", session, body: { service, customerName, phone: normalized } },
+      ));
     } catch (err) {
       setError(err.message);
     } finally {
       setBusy(false);
     }
   }
-  const accepting =
-    data?.acceptingEntries && (session || data.policy.remoteEnabled),
-    selectedService = data?.services.find((item) => item._id === service);
-  const eligible = (item) => session ? item.walkInBookable : item.bookable;
+
   return (
     <div className="booking-ui queue-ui">
-      {(error || loadError) && (
-        <div role="alert" className="booking-error">
-          {error || loadError}
-        </div>
-      )}
+      {(error || loadError) && <p role="alert" className="booking-error">{error || loadError}</p>}
       {!data ? (
-        <p role="status">
-          {loadError
-            ? "Queue is unavailable. The page will retry automatically."
-            : "Loading today’s queue…"}
-        </p>
+        <p role="status">{loadError ? "Queue unavailable. Retrying automatically." : "Loading the queue…"}</p>
+      ) : unavailable ? (
+        <p role="status">{unavailable}</p>
       ) : (
-        <>
-          <p>
-            Today: <strong>{calendarDate(data.date)}</strong> · {data.timezone} ·{" "}
-            {data.waitingCount} waiting
-          </p>
+        <form className="booking-form" onSubmit={submit}>
+          <label>
+            Service
+            <select required value={service} onChange={(e) => setService(e.target.value)}>
+              <option value="">Choose a service</option>
+              {services.map((item) => (
+                <option key={item._id} value={item._id} disabled={!eligible(item)}>
+                  {item.name}{!eligible(item) ? " (unavailable today)" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Name
+            <input required maxLength={120} autoComplete="name" value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)} />
+          </label>
+          <label>
+            Phone number
+            <input required type="tel" maxLength={25} autoComplete="tel" value={phone}
+              onChange={(e) => setPhone(e.target.value)} />
+          </label>
           <p className="booking-note">
-            {accepting
-              ? session
-                ? "Register a walk-in and check them in."
-                : "Join from home, then keep your private ticket page open."
-              : "The queue is not accepting " +
-                (session ? "walk-in" : "online") +
-                " entries right now."}
+            For numbers outside the US, include + and the country code.
+            {!session && " Keep your ticket link private and open for updates. No text message is sent."}
           </p>
-          <p className="booking-note">
-            Keep your ticket page open for updates every 10 seconds. Wait times are estimates, not appointments. After you’re called, you have {data.policy.remoteArrivalMinutes} minutes to arrive, plus {data.policy.graceMinutes} minutes’ grace. Updates appear on your ticket page; no text message is sent.
-          </p>
-          <form className="booking-form" onSubmit={submit}>
-            <label>
-              Service
-              <select
-                required
-                value={service}
-                onChange={(e) => setService(e.target.value)}
-              >
-                <option value="">Choose a service</option>
-                {data.services.map((s) => (
-                  <option key={s._id} value={s._id} disabled={!eligible(s)}>
-                    {s.name} · {s.durationMinutes} min
-                    {!eligible(s) ? " · Unavailable now" : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {!data.services.length && <p>No active services are available.</p>}
-            {selectedService && !eligible(selectedService) && (
-                <p className="booking-note" role="status">
-                  This service has no qualified artist available in today’s queue schedule. Choose another service or ask reception.
-                </p>
-              )}
-            {selectedService && (
-              <div className="booking-service-summary">
-                <p className="eyebrow">
-                  {selectedService.category || "General"}
-                </p>
-                {selectedService.description && <p>{selectedService.description}</p>}
-              </div>
-            )}
-            <label>
-              Customer name
-              <input
-                required
-                maxLength={120}
-                autoComplete="name"
-                value={customer.customerName}
-                onChange={(e) =>
-                  setCustomer({ ...customer, customerName: e.target.value })
-                }
-              />
-            </label>
-            <label>
-              Phone number with country code
-              <input
-                required
-                type="tel"
-                maxLength={25}
-                placeholder="+1 (612) 800-4944"
-                autoComplete="tel"
-                value={customer.phone}
-                onChange={(e) =>
-                  setCustomer({ ...customer, phone: e.target.value })
-                }
-              />
-            </label>
-            <label>
-              Notes (optional)
-              <textarea
-                rows={3}
-                maxLength={1000}
-                value={customer.notes}
-                onChange={(e) =>
-                  setCustomer({ ...customer, notes: e.target.value })
-                }
-              />
-            </label>
-            <p className="booking-note">
-              Use +1 for US numbers or another international country code. The example isn’t a salon contact. One active ticket per phone number. Only authorized staff and anyone with your private link can view your details. Please leave sensitive information out of notes.
-            </p>
-            <label className="notification-toggle">
-              <input
-                type="checkbox"
-                checked={inAppUpdates}
-                onChange={(event) => setInAppUpdates(event.target.checked)}
-              />
-              Receive updates on my private ticket page
-            </label>
-            <button
-              className="button"
-              disabled={busy || !service || !accepting}
-            >
-              {busy
-                ? "Creating ticket…"
-                : session
-                  ? "Register walk-in"
-                  : "Join Queue"}
-            </button>
-          </form>
-        </>
+          <button className="button" disabled={busy || !!loadError || !selected || !eligible(selected)}>
+            {busy ? "Creating ticket…" : session ? "Add walk-in" : "Join Queue"}
+          </button>
+        </form>
       )}
     </div>
   );

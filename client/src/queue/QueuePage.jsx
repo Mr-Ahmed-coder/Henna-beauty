@@ -79,16 +79,12 @@ function TicketView({ reference, token }) {
               <dd>
                 {ticket.serviceName} · {ticket.durationMinutes} min
               </dd>
-              <dt>Price</dt>
-              <dd>Price available in salon</dd>
               <dt>Position</dt>
               <dd>
                 {ticket.position
                   ? `${ticket.position} in the waiting queue`
                   : "Called or no longer waiting"}
               </dd>
-              <dt>Customers ahead</dt>
-              <dd>{ticket.position ? Math.max(0, ticket.position - 1) : "—"}</dd>
               <dt>Approximate wait until called</dt>
               <dd>
                 {ticket.position
@@ -152,9 +148,7 @@ function TicketView({ reference, token }) {
               />
             </label>
             <p className="booking-note">
-              Last updated {formatTime(data.serverNow, data.timezone)} · Updates
-              every 10 seconds. Positions and wait estimates can change with
-              artist availability and appointments.
+              Updates automatically. Wait estimates may change.
             </p>
             {["Waiting", "Checked In", "Called"].includes(ticket.status) && (
               <button
