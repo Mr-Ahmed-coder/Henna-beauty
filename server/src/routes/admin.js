@@ -6,6 +6,8 @@ import { queueAdminRouter } from "./queue.js";
 import { businessReport, operationsMetrics } from "../reporting.js";
 import { saveBusinessSettings } from "../business-settings.js";
 import { providerConfiguration } from "../notification/providers.js";
+import { ArtistProfile } from "../models/booking.js";
+import { atomic } from "../booking/engine.js";
 import {
   Staff,
   Session,
@@ -212,13 +214,19 @@ export function adminRouter({
     res.json(publicStaff(staff));
   });
   router.delete("/staff/:id", admin, async (req, res) => {
-    const staff = await Staff.findById(id(req.params.id));
-    if (!staff) fail(404, "Staff not found");
-    if (staff.bootstrap || String(staff._id) === String(req.staff._id))
-      fail(409, "This administrator cannot be deleted");
-    await Staff.deleteOne({ _id: staff._id });
-    await Session.deleteMany({ staff: staff._id });
-    await Schedule.deleteMany({ staff: staff._id });
+    const staffId = id(req.params.id);
+    await atomic(async (session) => {
+      const staff = await Staff.findById(staffId).session(session);
+      if (!staff) fail(404, "Staff not found");
+      if (staff.bootstrap || String(staff._id) === String(req.staff._id))
+        fail(409, "This administrator cannot be deleted");
+      const filter = { staff: staff._id };
+      await Session.deleteMany(filter, { session });
+      await Schedule.deleteMany(filter, { session });
+      await ArtistProfile.deleteOne(filter, { session });
+      await Staff.deleteOne({ _id: staff._id }, { session });
+      // Appointments and tickets keep their original artist references and name snapshots.
+    });
     res.json({ ok: true });
   });
   router.get("/services", async (_req, res) =>

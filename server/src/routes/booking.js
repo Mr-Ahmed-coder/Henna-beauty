@@ -15,6 +15,7 @@ import {
   validatePreferences,
 } from "../notification/engine.js";
 import {
+  atomic,
   availability,
   bookingReady,
   configuration,
@@ -308,8 +309,6 @@ export function appointmentAdminRouter() {
   );
   router.put("/artist-profiles/:id", admin, async (req, res) => {
     const staff = objectId(req.params.id);
-    if (!(await Staff.exists({ _id: staff, active: true, role: "Artist" })))
-      fail(400, "Choose an active Artist");
     const body = fields(req.body, ["services", "breaks"]);
     if (
       !Array.isArray(body.services) ||
@@ -323,10 +322,15 @@ export function appointmentAdminRouter() {
       body.services.length
     )
       fail(400, "Unknown service");
-    const doc =
-      (await ArtistProfile.findOne({ staff })) || new ArtistProfile({ staff });
-    doc.set(body);
-    await doc.save();
+    const doc = await atomic(async (session) => {
+      if (!(await Staff.exists({ _id: staff, active: true, role: "Artist" }).session(session)))
+        fail(400, "Choose an active Artist");
+      const profile =
+        (await ArtistProfile.findOne({ staff }).session(session)) ||
+        new ArtistProfile({ staff });
+      profile.set(body);
+      return profile.save({ session });
+    });
     res.json(doc);
   });
   return router;

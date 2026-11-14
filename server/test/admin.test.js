@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import mongoose from "mongoose";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { createApp } from "../src/app.js";
 import {
   Staff,
@@ -12,9 +12,10 @@ import {
   initializeModels,
 } from "../src/models/index.js";
 import { bootstrapAdmin } from "../src/bootstrap.js";
+import { ArtistProfile } from "../src/models/booking.js";
 const origin = "http://127.0.0.1:5173";
 test("staff authentication, RBAC, CRUD, persistence and session security", async (t) => {
-  const mongo = await MongoMemoryServer.create();
+  const mongo = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
   await mongoose.connect(mongo.getUri());
   await initializeModels();
   let server = createApp().listen(0, "127.0.0.1");
@@ -364,6 +365,7 @@ test("staff authentication, RBAC, CRUD, persistence and session security", async
   assert.equal((await call("/auth/me", "GET", null, admin)).status, 200);
   assert.equal(await Service.countDocuments(), 1);
   assert.equal(await Schedule.countDocuments(), 1);
+  await ArtistProfile.create({ staff: artist.data.id, services: [service.data._id] });
   assert.equal(await Settings.countDocuments(), 1);
   assert.equal(
     (await call("/staff/" + artist.data.id, "PATCH", { active: false }, admin))
@@ -385,6 +387,7 @@ test("staff authentication, RBAC, CRUD, persistence and session security", async
     200,
   );
   assert.equal(await Schedule.countDocuments(), 0);
+  assert.equal(await ArtistProfile.countDocuments({ staff: artist.data.id }), 0);
   assert.equal(
     (await call("/services/" + service.data._id, "DELETE", {}, admin)).status,
     200,
