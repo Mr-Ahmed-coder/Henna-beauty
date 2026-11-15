@@ -614,12 +614,31 @@ footer {
   font-size: 11px;
   color: #637766;
 }
-.team-access {
-  align-self: flex-start;
-  padding: 6px 0;
-  color: #2b5636;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.staff-portal {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #366b44;
+  border-radius: 2px;
+  background: #fbf9f4;
+  color: #213527;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.staff-portal:hover {
+  background: #eef5ef;
+}
+.staff-portal:focus-visible {
+  outline: 2px solid #366b44;
+  outline-offset: 3px;
 }
 .page-heading {
   padding-block: 75px 40px;

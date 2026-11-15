@@ -3,7 +3,7 @@ import { queueApi, useQueuePolling } from "../queue/api";
 import JoinQueue from "../queue/JoinQueue";
 import { formatTime } from "../booking/api";
 import { calendarDate } from "../localization";
-function PolicyForm({ session }) {
+export function PolicyForm({ session }) {
   const [policy, setPolicy] = useState(null),
     [error, setError] = useState(""),
     [saved, setSaved] = useState(false),
@@ -118,14 +118,14 @@ function PolicyForm({ session }) {
     </section>
   );
 }
-export default function QueueAdmin({ session }) {
+export default function QueueAdmin({ session, initialMode = "board" }) {
   const [revision, setRevision] = useState(0),
     { data, error: pollError } = useQueuePolling(
       "/api/admin/queue",
       undefined,
       revision,
     ),
-    [mode, setMode] = useState("board"),
+    [mode, setMode] = useState(initialMode),
     [staff, setStaff] = useState([]),
     [artist, setArtist] = useState(""),
     [error, setError] = useState(""),
@@ -136,6 +136,14 @@ export default function QueueAdmin({ session }) {
   const desk = ["Admin", "Receptionist"].includes(session.staff.role);
   const activeTickets = data?.tickets.filter((ticket) => ticket.active) ?? [];
   const finishedTickets = data?.tickets.filter((ticket) => !ticket.active) ?? [];
+  const callableArtists = data?.callableArtists;
+  const callBlocked = !data ? "" :
+    !data.isOpen ? "The salon is closed." :
+    !data.policy.enabled ? "The queue is paused." :
+    !data.waitingCount ? "Nobody is waiting." :
+    callableArtists && !(artist ? callableArtists.includes(artist) : callableArtists.length)
+      ? artist ? "This artist cannot take a waiting customer right now." : "No artist can take a waiting customer right now."
+      : "";
   useEffect(() => {
     let active = true;
     queueApi("/api/admin/staff")
@@ -180,14 +188,10 @@ export default function QueueAdmin({ session }) {
   }
   return (
     <section>
-      <h2>Queue</h2>
       <div className="queue-board-tools">
         {mode !== "board" && <button onClick={() => tab("board")}>Back to queue</button>}
         {desk && mode !== "walk-in" && (
-          <button onClick={() => tab("walk-in")}>Add walk-in</button>
-        )}
-        {session.staff.role === "Admin" && mode !== "policy" && (
-          <button onClick={() => tab("policy")}>Queue rules</button>
+          <button className="button" onClick={() => tab("walk-in")}>Add Walk-in</button>
         )}
       </div>
       {(error || pollError) && (
@@ -233,9 +237,7 @@ export default function QueueAdmin({ session }) {
           </div>
         </div>
       )}
-      {mode === "policy" ? (
-        <PolicyForm session={session} />
-      ) : mode === "walk-in" ? (
+      {mode === "walk-in" && desk ? (
         <JoinQueue
           session={session}
           onJoined={(result) => {
@@ -280,7 +282,7 @@ export default function QueueAdmin({ session }) {
               </select>
               <button
                 className="button"
-                disabled={busy || !!pollError || !data.isOpen || !data.policy.enabled || !data.waitingCount}
+                disabled={busy || !!pollError || !!callBlocked}
                 onClick={() =>
                   act(
                     "/api/admin/queue/call-next",
@@ -289,10 +291,11 @@ export default function QueueAdmin({ session }) {
                   )
                 }
               >
-                Call next
+                Call Next
               </button>
             </div>
           )}
+          {desk && callBlocked && <p role="status">{callBlocked}</p>}
           {!activeTickets.length && <p>No active tickets.</p>}
           {activeTickets.map((ticket) => (
             <article className="queue-board-card" key={ticket.reference}>
@@ -351,7 +354,7 @@ export default function QueueAdmin({ session }) {
                         )
                       }
                     >
-                      Mark arrived
+                      Check In
                     </button>
                   )}
                 {ticket.status === "Called" && ticket.checkedInAt && (
@@ -365,7 +368,7 @@ export default function QueueAdmin({ session }) {
                       )
                     }
                   >
-                    Start service
+                    Start Service
                   </button>
                 )}
                 {ticket.status === "In Service" && (
@@ -379,7 +382,7 @@ export default function QueueAdmin({ session }) {
                       )
                     }
                   >
-                    Complete service
+                    Complete
                   </button>
                 )}
                 {desk && ticket.active && (

@@ -321,3 +321,23 @@
     text-align: left;
   }
 }
+
+/* Staff workspace */
+.admin-main { padding-top: 24px; }
+.admin-main h1 { font-size: clamp(1.8rem, 4vw, 2.4rem); margin: 0 0 1rem; }
+.admin-main h2 { font-size: 1.25rem; }
+.admin-tabs { gap: 8px; margin: 0 0 20px; }
+.admin-tabs button { border-radius: 6px; }
+.admin-subnav { padding-bottom: 14px; border-bottom: 1px solid #d4ded5; }
+.operations-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 16px 0; }
+.operations-summary article, .operations-panel { padding: 14px; border-radius: 8px; min-width: 0; }
+.operations-summary strong { font-size: 1.75rem; }
+.operations-summary span, .operations-row { font-size: 0.875rem; }
+.operations-row { overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .admin-main { padding-inline: 14px; }
+  .admin-tabs:not(.admin-subnav) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .operations-summary { gap: 6px; }
+  .operations-summary article { padding: 10px 7px; }
+  .operations-grid { grid-template-columns: 1fr; }
+}

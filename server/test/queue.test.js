@@ -277,10 +277,12 @@ test("hybrid queue integration on a real isolated replica set", async (t) => {
       assert.equal(result.data.reference, second.data.ticket.reference);
       assert.ok(result.data.end <= at("11:00"));
       assert.equal((await call(b)).status, 409); // Only the older long service remains, and B is not qualified.
+      assert.deepEqual((await api("/api/admin/queue", { auth: desk })).data.callableArtists, []);
       clock = initial.set({ hour: 12, minute: 15 });
       const breakCall = await call(a);
       assert.equal(breakCall.status, 409, JSON.stringify(breakCall.data)); // A's recurring break.
       clock = initial.set({ hour: 13 });
+      assert.deepEqual((await api("/api/admin/queue", { auth: desk })).data.callableArtists, [String(a._id)]);
       assert.equal((await call(a)).data.reference, first.data.ticket.reference);
     },
   );

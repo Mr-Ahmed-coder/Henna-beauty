@@ -53,15 +53,6 @@ export default function Layout() {
       <header>
         <div className="nav-wrap">
           <Brand />
-          <button
-            className="menu-toggle"
-            aria-expanded={open}
-            aria-controls="navigation"
-            aria-label={open ? "Close navigation" : "Open navigation"}
-            onClick={() => setOpen(!open)}
-          >
-            {open ? <X /> : <Menu />}
-          </button>
           <nav
             id="navigation"
             className={open ? "navigation open" : "navigation"}
@@ -91,6 +82,18 @@ export default function Layout() {
               My Booking
             </Link>
           </nav>
+          <div className="header-actions">
+            <Link className="staff-portal" to="/staff">Staff Portal</Link>
+            <button
+              className="menu-toggle"
+              aria-expanded={open}
+              aria-controls="navigation"
+              aria-label={open ? "Close navigation" : "Open navigation"}
+              onClick={() => setOpen(!open)}
+            >
+              {open ? <X /> : <Menu />}
+            </button>
+          </div>
         </div>
       </header>
       <main id="main" tabIndex={-1} ref={main}>
@@ -129,7 +132,6 @@ export default function Layout() {
           <span>
             © {new Date().getFullYear()} Amallina Beauty Salon. All rights reserved.
           </span>
-          <Link className="team-access" to="/staff">Team Access</Link>
         </div>
       </footer>
     </>

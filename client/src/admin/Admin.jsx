@@ -1,12 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "./admin.css";
-import AppointmentAdmin from "./AppointmentAdmin";
-import QueueAdmin from "./QueueAdmin";
+import AppointmentAdmin, { BookingConfiguration } from "./AppointmentAdmin";
+import QueueAdmin, { PolicyForm } from "./QueueAdmin";
 import OperationsDashboard from "./OperationsDashboard";
 import BusinessReports from "./BusinessReports";
 import NotificationSettings from "./NotificationSettings";
 import { money, salonDefaults } from "../localization";
+const salonSections = [
+  ["services", "Services"], ["staff", "Staff"], ["schedules", "Schedules"],
+  ["hours", "Business Hours"], ["booking-rules", "Booking & Qualifications"],
+  ["queue-rules", "Queue Rules"], ["reports", "Reports"],
+];
+const primarySections = [
+  ["dashboard", "Today"], ["appointments", "Appointments"],
+  ["queue", "Queue"], ["services", "Manage Salon"],
+];
 const days = [
   "Sunday",
   "Monday",
@@ -70,6 +79,7 @@ export default function Admin() {
     [error, setError] = useState(""),
     [message, setMessage] = useState(""),
     [pane, setPane] = useState("dashboard"),
+    [entry, setEntry] = useState(null),
     [rows, setRows] = useState([]),
     [staff, setStaff] = useState([]),
     [form, setForm] = useState(null),
@@ -116,7 +126,7 @@ export default function Admin() {
     };
   }, []);
   useEffect(() => {
-    if (!session) return;
+    if (session?.staff.role !== "Admin" || !["services", "staff", "schedules", "hours"].includes(pane)) return;
     let active = true;
     Promise.all(
       ["/staff", "/services", "/schedules", "/settings"].map((path) =>
@@ -172,8 +182,9 @@ export default function Admin() {
       setBusy(false);
     }
   }
-  function changePane(next) {
+  function changePane(next, mode = null) {
     setPane(next);
+    setEntry(mode);
     setForm(null);
     setEditing(null);
     setError("");
@@ -208,6 +219,8 @@ export default function Admin() {
     });
   }
   const canEdit = session?.staff.role === "Admin";
+  const managing = canEdit && salonSections.some(([item]) => item === pane);
+  const visiblePane = !canEdit && salonSections.some(([item]) => item === pane) ? "dashboard" : pane;
   const formatMoney = (value) => {
     return money(value, settings?.currency || salonDefaults.currency);
   };
@@ -223,7 +236,7 @@ export default function Admin() {
               perform(async () => {
                 await request("/auth/logout", "POST", {});
                 setSession(null);
-                setForm(null);
+                changePane("dashboard");
               })
             }
           >
@@ -232,8 +245,7 @@ export default function Admin() {
         )}
       </header>
       <main className="admin-main">
-        <p className="eyebrow">SALON WORKSPACE</p>
-        <h1>{session ? "Welcome, " + session.staff.name : "Staff login"}</h1>
+        <h1>{session ? (managing ? "Manage Salon" : primarySections.find(([item]) => item === visiblePane)?.[1]) : "Staff login"}</h1>
         {error && (
           <div role="alert" className="admin-alert">
             {error}
@@ -289,50 +301,35 @@ export default function Admin() {
           </form>
         ) : (
           <>
-            <p className="admin-role">
-              {session.staff.role} ·{" "}
-              {canEdit
-                ? "Manage the salon."
-                : session.staff.role === "Artist"
-                  ? "View your schedule and assigned visits."
-                  : "Manage appointments and the queue."}
-            </p>
-            <nav className="admin-tabs" aria-label="Administration">
-              <span className="admin-tab-label">Today</span>
-              {["dashboard", "appointments", "queue"].map((item) => (
-                <button
-                  key={item}
-                  aria-current={pane === item ? "page" : undefined}
-                  onClick={() => changePane(item)}
-                >
-                  {item === "dashboard" ? "Operations" : item}
-                </button>
-              ))}
-              <span className="admin-tab-label">Manage salon</span>
-              {canEdit && <button aria-current={pane === "reports" ? "page" : undefined} onClick={() => changePane("reports")}>Reports</button>}
-              {["services", "staff", "schedules", "hours"].map((item) => (
-                <button
-                  key={item}
-                  aria-current={pane === item ? "page" : undefined}
-                  onClick={() => changePane(item)}
-                >
-                  {item === "staff" && session.staff.role === "Artist"
-                    ? "My account"
-                    : item === "hours"
-                      ? "Settings & hours"
-                      : item}
+            <nav className="admin-tabs" aria-label="Staff dashboard">
+              {primarySections.filter(([item]) => item !== "services" || canEdit).map(([item, label]) => (
+                <button key={item}
+                  aria-current={(item === "services" ? managing : visiblePane === item) ? "page" : undefined}
+                  onClick={() => changePane(item)}>
+                  {label}
                 </button>
               ))}
             </nav>
-            {pane === "dashboard" ? (
+            {managing && (
+              <nav className="admin-tabs admin-subnav" aria-label="Manage Salon">
+                {salonSections.map(([item, label]) => (
+                  <button key={item} aria-current={pane === item ? "page" : undefined} onClick={() => changePane(item)}>{label}</button>
+                ))}
+              </nav>
+            )}
+            {visiblePane === "dashboard" ? (
               <OperationsDashboard session={session} onOpen={changePane} />
-            ) : pane === "reports" && canEdit ? (
+            ) : visiblePane === "reports" && canEdit ? (
               <BusinessReports />
-            ) : pane === "queue" ? (
-              <QueueAdmin session={session} />
-            ) : pane === "appointments" ? (
-              <AppointmentAdmin session={session} />
-            ) : pane === "hours" ? (
+            ) : visiblePane === "booking-rules" && canEdit ? (
+              <BookingConfiguration session={session} />
+            ) : visiblePane === "queue-rules" && canEdit ? (
+              <PolicyForm session={session} />
+            ) : visiblePane === "queue" ? (
+              <QueueAdmin key={entry || "board"} session={session} initialMode={entry || "board"} />
+            ) : visiblePane === "appointments" ? (
+              <AppointmentAdmin key={entry || "list"} session={session} initialMode={entry || "list"} />
+            ) : visiblePane === "hours" && canEdit ? (
               settings && (
                 <form
                   className="admin-form"
@@ -356,10 +353,6 @@ export default function Admin() {
                   <h2>Business hours & settings</h2>
                   {(settings.currency !== salonDefaults.currency || settings.timezone !== salonDefaults.timezone) && <p className="admin-alert" role="status">Minnesota target settings are USD and America/Chicago. Current saved settings are {settings.currency} and {settings.timezone}. Review existing prices and active visits before changing them; never relabel legacy prices or shift saved visits.</p>}
                   <p className="booking-note">Hours changes that conflict with future appointments are rejected. Timezone changes require reviewing future appointments and clearing active queue visits. Existing reservations retain their saved time, price, currency, and duration.</p>
-                  {canEdit && <div className="admin-actions">
-                    <button type="button" onClick={() => changePane("appointments")}>Appointment policies & qualifications</button>
-                    <button type="button" onClick={() => changePane("queue")}>Queue rules & grace periods</button>
-                  </div>}
                   {!settings._id && (
                     <p>
                       Suggested defaults — review and save to create salon

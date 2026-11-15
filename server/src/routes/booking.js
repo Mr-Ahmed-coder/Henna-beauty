@@ -245,11 +245,16 @@ export function appointmentAdminRouter() {
         };
       }
     }
+    const upcoming = req.query.upcoming === "1" && req.query.today === "1";
+    if (upcoming && query.start) {
+      query.start.$gte = new Date();
+      if (!query.status) query.status = { $in: ["Pending", "Confirmed", "Checked In"] };
+    }
     const page = Math.max(1, Math.min(10000, Number(req.query.page) || 1));
     if (!Number.isInteger(page)) fail(400, "Invalid page");
     const total = await Appointment.countDocuments(query);
     const appointments = await Appointment.find(query)
-      .sort({ start: -1, _id: 1 })
+      .sort({ start: upcoming ? 1 : -1, _id: 1 })
       .skip((page - 1) * 30)
       .limit(30);
     res.json({ appointments: appointments.map(safeAppointment), total, page });

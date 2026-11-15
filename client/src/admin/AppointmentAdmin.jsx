@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import BookingForm from "../booking/BookingForm";
-import { bookingApi, formatTime, money } from "../booking/api";
+import { bookingApi, formatTime } from "../booking/api";
 const transitions = {
   Pending: ["Confirmed", "Cancelled"],
   Confirmed: ["Checked In", "Cancelled", "No-Show"],
@@ -19,7 +19,7 @@ const days = [
   "Friday",
   "Saturday",
 ];
-function BookingConfiguration({ session }) {
+export function BookingConfiguration({ session }) {
   const [data, setData] = useState(null),
     [selected, setSelected] = useState(""),
     [profile, setProfile] = useState({ services: [], breaks: [] }),
@@ -326,8 +326,8 @@ function BookingConfiguration({ session }) {
     </section>
   );
 }
-export default function AppointmentAdmin({ session }) {
-  const [mode, setMode] = useState("list"),
+export default function AppointmentAdmin({ session, initialMode = "list" }) {
+  const [mode, setMode] = useState(initialMode),
     [data, setData] = useState(null),
     [q, setQ] = useState(""),
     [status, setStatus] = useState(""),
@@ -384,31 +384,12 @@ export default function AppointmentAdmin({ session }) {
   }
   return (
     <section>
-      <h2>Appointments</h2>
       <div className="booking-actions">
-        <button
-          onClick={() => {
-            setMode("list");
-            setEditing(null);
-            reload();
-          }}
-        >
-          Reservations
-        </button>
-        {desk && (
-          <button
-            onClick={() => {
-              setMode("create");
-              setEditing(null);
-              setMessage("");
-            }}
-          >
-            Create manually
-          </button>
+        {mode === "create" ? (
+          <button onClick={() => { setMode("list"); reload(); }}>Back to appointments</button>
+        ) : desk && (
+          <button className="button" onClick={() => { setMode("create"); setEditing(null); setMessage(""); }}>New Booking</button>
         )}
-        <button onClick={() => setMode("configuration")}>
-          Booking configuration
-        </button>
       </div>
       {error && (
         <div role="alert" className="booking-error">
@@ -446,9 +427,7 @@ export default function AppointmentAdmin({ session }) {
           />
         </label>
       )}
-      {mode === "configuration" ? (
-        <BookingConfiguration session={session} />
-      ) : mode === "create" ? (
+      {mode === "create" ? (
         <>
           <h3>New appointment</h3>
           <BookingForm
@@ -517,16 +496,13 @@ export default function AppointmentAdmin({ session }) {
                     {appointment.reference} · {appointment.status}
                   </p>
                   <h3>
-                    {appointment.serviceName} · {appointment.artistName}
+                    {appointment.customerName}
                   </h3>
                   <p>
-                    {formatTime(appointment.start, appointment.timezone)} (
-                    {appointment.timezone}) · {appointment.durationMinutes}{" "}
-                    minutes ·{" "}
-                    {money(appointment.priceMinor, appointment.currency)}
+                    {formatTime(appointment.start, appointment.timezone)} · {appointment.serviceName} · {appointment.artistName}
                   </p>
                   <p>
-                    {appointment.customerName} · {appointment.phone}
+                    {appointment.phone}
                   </p>
                   {appointment.notes && <p>Notes: {appointment.notes}</p>}
                   <div className="booking-actions">

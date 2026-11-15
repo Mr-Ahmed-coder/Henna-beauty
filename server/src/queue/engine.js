@@ -258,8 +258,21 @@ export async function getQueueSnapshot({
       staff.role === "Artist"
         ? tickets.filter((t) => String(t.artist) === String(staff._id))
         : tickets;
+    const callableArtists = new Set();
+    if (staff.role !== "Artist" && context.isOpen && context.policy.enabled) {
+      const checked = new Set();
+      for (const ticket of visible) {
+        if (!pending.includes(ticket.status) || ticket.date !== context.date) continue;
+        const key = `${ticket.service}:${requiredMinutes(ticket, context.policy)}`;
+        if (checked.has(key)) continue;
+        checked.add(key);
+        for (const slot of await candidates(ticket, context, null, { instant: true }))
+          callableArtists.add(slot.artist);
+      }
+    }
     return {
       ...common,
+      callableArtists: [...callableArtists],
       tickets: visible.map((t) => decorate(t, forecast, context)),
     };
   }
