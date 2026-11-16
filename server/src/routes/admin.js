@@ -1,18 +1,21 @@
 import { Router } from "express";
 import mongoose from "mongoose";
+import { DateTime } from "luxon";
 import { rateLimit } from "express-rate-limit";
 import { appointmentAdminRouter } from "./booking.js";
 import { queueAdminRouter } from "./queue.js";
 import { businessReport, operationsMetrics } from "../reporting.js";
 import { saveBusinessSettings } from "../business-settings.js";
 import { providerConfiguration } from "../notification/providers.js";
-import { ArtistProfile } from "../models/booking.js";
+import { Appointment, ArtistProfile } from "../models/booking.js";
+import { QueueTicket } from "../models/queue.js";
 import { atomic } from "../booking/engine.js";
 import {
   Staff,
   Session,
   Service,
   Schedule,
+  ScheduleException,
   Settings,
 } from "../models/index.js";
 import {
@@ -223,6 +226,7 @@ export function adminRouter({
       const filter = { staff: staff._id };
       await Session.deleteMany(filter, { session });
       await Schedule.deleteMany(filter, { session });
+      await ScheduleException.deleteMany(filter, { session });
       await ArtistProfile.deleteOne(filter, { session });
       await Staff.deleteOne({ _id: staff._id }, { session });
       // Appointments and tickets keep their original artist references and name snapshots.
@@ -322,6 +326,49 @@ export function adminRouter({
   router.delete("/schedules/:id", admin, async (req, res) => {
     const result = await Schedule.deleteOne({ _id: id(req.params.id) });
     if (!result.deletedCount) fail(404, "Schedule not found");
+    res.json({ ok: true });
+  });
+  async function checkExceptionChange(staff, date, session) {
+    const settings = await Settings.findById("salon").session(session);
+    if (!settings) fail(409, "Save salon hours and timezone first");
+    const day = DateTime.fromISO(date, { zone: settings.timezone });
+    if (!day.isValid || day.toISODate() !== date)
+      fail(400, "Choose a valid exception date");
+    if (await Appointment.exists({
+      artist: staff,
+      status: { $in: ["Pending", "Confirmed", "Checked In", "In Service"] },
+      start: { $lt: day.plus({ days: 1 }).toJSDate() },
+      end: { $gt: day.toJSDate() },
+    }).session(session) || await QueueTicket.exists({ artist: staff, date, active: true }).session(session))
+      fail(409, "Review this artist’s existing appointments or active queue visits before changing this date.");
+  }
+  router.get("/schedule-exceptions", admin, async (_req, res) =>
+    res.json(await ScheduleException.find().sort({ date: 1, staff: 1 })),
+  );
+  router.put("/schedule-exceptions", admin, async (req, res) => {
+    const body = fields(req.body, ["staff", "date", "available", "start", "end"]);
+    if (typeof body.staff !== "string" || typeof body.date !== "string" ||
+        typeof body.available !== "boolean") fail(400, "Choose an artist, date, and availability");
+    const staff = id(body.staff);
+    const result = await atomic(async (session) => {
+      if (!(await Staff.exists({ _id: staff, role: "Artist", active: true }).session(session)))
+        fail(400, "Choose an active artist");
+      await checkExceptionChange(staff, body.date, session);
+      const exception = await ScheduleException.findOne({ staff, date: body.date }).session(session) ||
+        new ScheduleException({ staff, date: body.date });
+      exception.set({ available: body.available, start: body.start, end: body.end });
+      return exception.save({ session });
+    });
+    res.json(result);
+  });
+  router.delete("/schedule-exceptions/:id", admin, async (req, res) => {
+    const exceptionId = id(req.params.id);
+    await atomic(async (session) => {
+      const exception = await ScheduleException.findById(exceptionId).session(session);
+      if (!exception) fail(404, "Schedule exception not found");
+      await checkExceptionChange(exception.staff, exception.date, session);
+      await exception.deleteOne({ session });
+    });
     res.json({ ok: true });
   });
   router.use(appointmentAdminRouter());

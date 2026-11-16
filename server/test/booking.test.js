@@ -18,6 +18,7 @@ import {
 } from "../src/models/booking.js";
 import { hashPassword } from "../src/security.js";
 import { availability } from "../src/booking/engine.js";
+import { getQueueSnapshot } from "../src/queue/engine.js";
 const origin = "http://127.0.0.1:5173";
 test("appointment booking integration", async (t) => {
   const mongo = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
@@ -153,6 +154,58 @@ test("appointment booking integration", async (t) => {
     artistAuth = await login(one),
     otherAuth = await login(two);
   let saved;
+  await t.test("all seven Chicago weekdays, disabled days and date overrides", async () => {
+    const zone = "America/Chicago";
+    const sunday = DateTime.now().setZone(zone).startOf("week").plus({ days: 13 });
+    const bounds = (day, time) => DateTime.fromISO(`${day}T${time}`, { zone }).toUTC().toISO();
+    const slots = async (day) => {
+      const result = await api("/api/booking/availability?" + new URLSearchParams({
+        service: String(long._id), date: day, artist: String(one._id),
+      }));
+      assert.equal(result.status, 200);
+      return result.data.slots;
+    };
+    await Settings.updateOne({ _id: "salon" }, { timezone: zone });
+    try {
+      const catalog = (await api("/api/booking/catalog")).data;
+      assert.equal(catalog.firstDate, DateTime.now().setZone(zone).toISODate());
+      assert.equal(catalog.lastDate, DateTime.fromISO(catalog.firstDate, { zone }).plus({ days: 90 }).toISODate());
+      for (let offset = 0; offset < 7; offset++) {
+        const day = sunday.plus({ days: offset }).toISODate();
+        assert.equal((await slots(day))[0].start, bounds(day, "09:00"));
+        if (offset < 2) {
+          const queue = await getQueueSnapshot({ now: DateTime.fromISO(bounds(day, "10:00")) });
+          assert.equal(queue.acceptingEntries, true);
+          assert.equal(queue.services.find((item) => String(item._id) === String(long._id)).bookable, true);
+        }
+      }
+      const day = sunday.toISODate();
+      const path = "/api/admin/schedule-exceptions";
+      const make = (auth, details) => api(path, {
+        method: "PUT", auth, body: { staff: String(one._id), date: day, ...details },
+      });
+      assert.equal((await make(deskAuth, { available: false })).status, 403);
+      const off = await make(adminAuth, { available: false });
+      assert.equal(off.status, 200);
+      assert.deepEqual(await slots(day), []);
+      const custom = await make(adminAuth, { available: true, start: "13:00", end: "16:00" });
+      assert.equal(custom.status, 200);
+      assert.equal(custom.data._id, off.data._id);
+      assert.equal((await slots(day))[0].start, bounds(day, "13:00"));
+      assert.equal((await api(`${path}/${off.data._id}`, { method: "DELETE", auth: adminAuth, body: {} })).status, 200);
+      await Schedule.updateOne({ staff: one._id, day: 0 }, { available: false });
+      assert.deepEqual(await slots(day), []);
+      for (const weekday of [0, 1, 2, 3, 4, 5, 6]) {
+        const date = sunday.plus({ days: weekday }).toISODate();
+        await Settings.updateOne({ _id: "salon", "hours.day": weekday }, { "hours.$.closed": true });
+        assert.deepEqual(await slots(date), []);
+        await Settings.updateOne({ _id: "salon", "hours.day": weekday }, { "hours.$.closed": false });
+      }
+    } finally {
+      await Schedule.updateOne({ staff: one._id, day: 0 }, { available: true });
+      await Settings.updateOne({ _id: "salon" }, { timezone: "Africa/Kampala", hours });
+    }
+  });
   await t.test(
     "live catalog, qualified artists, duration, business hours, breaks and timezone",
     async () => {

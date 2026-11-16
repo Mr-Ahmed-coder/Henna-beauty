@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import { Appointment, ArtistProfile } from "./models/booking.js";
 import { QueueTicket } from "./models/queue.js";
-import { Staff, Schedule, Settings } from "./models/index.js";
+import { Staff, Schedule, ScheduleException, Settings } from "./models/index.js";
 import { fail } from "./booking/engine.js";
 
 export function reportPeriod(period, date, timezone, now = DateTime.utc()) {
@@ -70,8 +70,8 @@ export async function operationsMetrics(staff, now = DateTime.utc()) {
   const settings = await Settings.findById("salon");
   const local = now.setZone(settings.timezone), day = local.weekday % 7, time = local.toFormat("HH:mm");
   const artists = await Staff.find({ active: true, role: "Artist", ...(staff.role === "Artist" ? { _id: staff._id } : {}) });
-  const [shifts, profiles, appointments, tickets] = await Promise.all([
-    Schedule.find({ day, available: true }), ArtistProfile.find(),
+  const [shifts, exceptions, profiles, appointments, tickets] = await Promise.all([
+    Schedule.find({ day, available: true }), ScheduleException.find({ date: local.toISODate() }), ArtistProfile.find(),
     Appointment.find({ status: { $nin: ["Cancelled", "No-Show", "Completed"] },
       $or: [{ start: { $lte: now.toJSDate() }, end: { $gt: now.toJSDate() } }, { status: "In Service" }] }),
     QueueTicket.find({ status: { $in: ["Waiting", "Checked In", "Called", "In Service"] } }),
@@ -80,8 +80,10 @@ export async function operationsMetrics(staff, now = DateTime.utc()) {
   const statuses = artists.map((artist) => {
     const occupied = appointments.some((a) => String(a.artist) === String(artist._id)) || tickets.some((t) =>
       String(t.artist) === String(artist._id) && (t.status === "In Service" || (t.status === "Called" && t.deadlineAt > now.toJSDate())));
-    const onShift = hours && !hours.closed && time >= hours.open && time < hours.close && shifts.some((s) =>
-      String(s.staff) === String(artist._id) && time >= s.start && time < s.end);
+    const shift = exceptions.find((s) => String(s.staff) === String(artist._id)) ||
+      shifts.find((s) => String(s.staff) === String(artist._id));
+    const onShift = hours && !hours.closed && time >= hours.open && time < hours.close &&
+      shift?.available && time >= shift.start && time < shift.end;
     const onBreak = profiles.find((p) => String(p.staff) === String(artist._id))?.breaks.some((b) => b.day === day && time >= b.start && time < b.end);
     return { id: String(artist._id), name: artist.name, status: occupied ? "Occupied" : !onShift ? "Off shift" : onBreak ? "On break" : "Available" };
   });

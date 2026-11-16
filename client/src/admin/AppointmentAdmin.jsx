@@ -19,7 +19,7 @@ const days = [
   "Friday",
   "Saturday",
 ];
-export function BookingConfiguration({ session }) {
+export function BookingConfiguration({ session, section }) {
   const [data, setData] = useState(null),
     [selected, setSelected] = useState(""),
     [profile, setProfile] = useState({ services: [], breaks: [] }),
@@ -72,7 +72,7 @@ export function BookingConfiguration({ session }) {
   }
   return (
     <section className="booking-admin-config">
-      <h2>Booking rules & artist qualifications</h2>
+      <h2>{section === "rules" ? "Booking rules" : "Artist qualifications and breaks"}</h2>
       {error && (
         <div role="alert" className="booking-error">
           {error}
@@ -83,6 +83,7 @@ export function BookingConfiguration({ session }) {
         <p>Loading booking configuration…</p>
       ) : (
         <>
+          {section === "rules" && (
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -169,6 +170,9 @@ export function BookingConfiguration({ session }) {
               )}
             </fieldset>
           </form>
+          )}
+          {section === "artists" && (<>
+
           <p>
             Artists need both a saved weekly shift and a service qualification
             before they appear as available. Breaks use the salon timezone and
@@ -321,6 +325,7 @@ export function BookingConfiguration({ session }) {
               </fieldset>
             </form>
           )}
+          </>)}
         </>
       )}
     </section>

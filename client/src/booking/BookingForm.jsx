@@ -66,9 +66,10 @@ export default function BookingForm({
     if (service && date) setLoading(true);
   }
   function chooseDate(event) {
+    if (event.target.value === date) return;
     reset();
     setDate(event.target.value);
-    if (event.target.value && service) setLoading(true);
+    setLoading(Boolean(event.target.value && service));
   }
   async function submit() {
     setBusy(true);
@@ -272,6 +273,8 @@ export default function BookingForm({
                   required
                   disabled={!service}
                   value={date}
+                  min={catalog.firstDate}
+                  max={catalog.lastDate}
                   onInput={chooseDate}
                   onChange={chooseDate}
                 />
@@ -284,8 +287,7 @@ export default function BookingForm({
                   <p role="status">Checking availability…</p>
                 ) : !uniqueSlots.length ? (
                   <p>
-                    No available times for this selection. Try another date or
-                    artist.
+                    No qualified artist has an available time for this selection. Try another date or artist.
                   </p>
                 ) : (
                   uniqueSlots.map((slot) => (

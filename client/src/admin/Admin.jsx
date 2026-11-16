@@ -1,3 +1,4 @@
+import ScheduleExceptions from "./ScheduleExceptions";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "./admin.css";
@@ -9,7 +10,7 @@ import NotificationSettings from "./NotificationSettings";
 import { money, salonDefaults } from "../localization";
 const salonSections = [
   ["services", "Services"], ["staff", "Staff"], ["schedules", "Schedules"],
-  ["hours", "Business Hours"], ["booking-rules", "Booking & Qualifications"],
+  ["hours", "Business Hours"], ["booking-rules", "Booking Rules"],
   ["queue-rules", "Queue Rules"], ["reports", "Reports"],
 ];
 const primarySections = [
@@ -322,7 +323,7 @@ export default function Admin() {
             ) : visiblePane === "reports" && canEdit ? (
               <BusinessReports />
             ) : visiblePane === "booking-rules" && canEdit ? (
-              <BookingConfiguration session={session} />
+              <BookingConfiguration session={session} section="rules" />
             ) : visiblePane === "queue-rules" && canEdit ? (
               <PolicyForm session={session} />
             ) : visiblePane === "queue" ? (
@@ -465,17 +466,19 @@ export default function Admin() {
                 {pane === "services" && (
                   <p>
                     Active services appear on the public menu. To make a service
-                    bookable, assign it to an active Artist in Booking
-                    configuration and save that Artist’s recurring shift.
+                    bookable, assign it to an active Artist in Schedules and save that Artist’s recurring shift.
                     USD prices are stored in cents: 3000 means $30.00. Legacy currencies retain their original units. Confirm every price before changing business currency.
                   </p>
                 )}
                 {pane === "schedules" && (
-                  <p>
-                    One recurring shift per staff member per weekday.
-                    Unavailable shifts remain visible. These records do not
-                    calculate appointment slots.
-                  </p>
+                  <>
+                    <p>Set one shift per artist for each day they work. Shifts must fit within Business Hours.</p>
+                    <ScheduleExceptions session={session} staff={staff} />
+                    <details>
+                      <summary>Artist qualifications and weekly breaks</summary>
+                      <BookingConfiguration session={session} section="artists" />
+                    </details>
+                  </>
                 )}
                 {form && (
                   <form className="admin-form editor-form" onSubmit={save}>

@@ -126,6 +126,18 @@ scheduleSchema.pre("validate", function () {
   if (this.start >= this.end) this.invalidate("end", "End must be after start");
 });
 export const Schedule = mongoose.model("Schedule", scheduleSchema);
+const scheduleExceptionSchema = new Schema({
+  staff: { type: Schema.Types.ObjectId, ref: "Staff", required: true },
+  date: { type: String, required: true, match: /^\d{4}-\d{2}-\d{2}$/ },
+  available: { type: Boolean, required: true },
+  start: { type: String, required() { return this.available; }, match: /^([01]\d|2[0-3]):[0-5]\d$/ },
+  end: { type: String, required() { return this.available; }, match: /^([01]\d|2[0-3]):[0-5]\d$/ },
+}, options);
+scheduleExceptionSchema.index({ staff: 1, date: 1 }, { unique: true });
+scheduleExceptionSchema.pre("validate", function () {
+  if (this.available && this.start >= this.end) this.invalidate("end", "End must be after start");
+});
+export const ScheduleException = mongoose.model("ScheduleException", scheduleExceptionSchema);
 export const Session = mongoose.model(
   "Session",
   new Schema(
@@ -144,6 +156,7 @@ export async function initializeModels() {
       Staff,
       Service,
       Schedule,
+      ScheduleException,
       Settings,
       Session,
       ...bookingModels,

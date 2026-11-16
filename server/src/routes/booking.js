@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
 import { DateTime } from "luxon";
-import { Staff, Service, Schedule, Settings } from "../models/index.js";
+import { Staff, Service, Schedule, ScheduleException, Settings } from "../models/index.js";
 import {
   ArtistProfile,
   Appointment,
@@ -52,6 +52,8 @@ export function bookingRouter({ origins }) {
   });
   router.get("/catalog", async (_req, res) => {
     const { settings, policy } = await configuration();
+    const firstDay = DateTime.now().setZone(settings.timezone).startOf("day");
+    const lastDay = firstDay.plus({ days: policy.advanceDays });
     const services = await Service.find({ active: true }).select(
       "name category description imageUrl priceMinor durationMinutes",
     );
@@ -66,6 +68,19 @@ export function bookingRouter({ origins }) {
       available: true,
       day: { $in: settings.hours.filter((hour) => !hour.closed).map((hour) => hour.day) },
     }).select("staff day start end");
+    const exceptions = await ScheduleException.find({
+      staff: { $in: artists.map((artist) => artist._id) },
+      date: { $gte: firstDay.toISODate(), $lte: lastDay.toISODate() },
+      available: true,
+    });
+    for (const exception of exceptions) {
+      scheduled.push({
+        staff: exception.staff,
+        day: DateTime.fromISO(exception.date, { zone: settings.timezone }).weekday % 7,
+        start: exception.start,
+        end: exception.end,
+      });
+    }
     const artistDetails = artists.map((artist) => ({
       id: String(artist._id),
       name: artist.name,
@@ -100,6 +115,8 @@ export function bookingRouter({ origins }) {
       artists: artistDetails,
       timezone: settings.timezone,
       currency: settings.currency,
+      firstDate: firstDay.toISODate(),
+      lastDate: lastDay.toISODate(),
       policy,
     });
   });

@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { DateTime } from "luxon";
 import { randomBytes } from "node:crypto";
-import { Staff, Service, Schedule, Settings } from "../models/index.js";
+import { Staff, Service, Schedule, ScheduleException, Settings } from "../models/index.js";
 import {
   BookingPolicy,
   ArtistProfile,
@@ -129,6 +129,10 @@ export async function availability(
     day: day.weekday % 7,
     available: true,
   }).session(session);
+  const exceptions = await ScheduleException.find({
+    staff: { $in: profiles.map((p) => p.staff) },
+    date,
+  }).session(session);
   const reservations = await Appointment.find({
     artist: { $in: artists.map((a) => a._id) },
     status: { $nin: ["Cancelled", "No-Show"] },
@@ -149,8 +153,9 @@ export async function availability(
     const profile = profiles.find(
         (p) => String(p.staff) === String(person._id),
       ),
-      shift = shifts.find((s) => String(s.staff) === String(person._id));
-    if (!profile || !shift) continue;
+      shift = exceptions.find((s) => String(s.staff) === String(person._id)) ||
+        shifts.find((s) => String(s.staff) === String(person._id));
+    if (!profile || !shift?.available) continue;
     const open = localTime(
         date,
         hours.open > shift.start ? hours.open : shift.start,
