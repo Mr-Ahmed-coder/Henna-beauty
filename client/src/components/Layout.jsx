@@ -41,15 +41,6 @@ export default function Layout() {
       >
         Skip to content
       </a>
-      <div className="preview-banner">
-        <span>Amallina Beauty Salon</span>
-        <span>·</span>
-        <span>2910 Pillsbury Ave #263, Minneapolis, MN</span>
-        <span>·</span>
-        <a href="tel:+16128004944" style={{ color: "inherit", textDecoration: "underline" }}>
-          +1 (612) 800-4944
-        </a>
-      </div>
       <header>
         <div className="nav-wrap">
           <Brand />
@@ -59,22 +50,20 @@ export default function Layout() {
             aria-label="Main navigation"
           >
             {[
-              ["/", "Home"],
               ["/services", "Services"],
-              ["/about", "About"],
               ["/contact", "Contact"],
             ].map(([to, label]) => (
               <NavLink key={to} to={to} end onClick={() => setOpen(false)}>
                 {label}
               </NavLink>
             ))}
-            <Link
+            {pathname !== "/" && <Link
               to="/appointments"
               className="button nav-appointment"
               onClick={() => setOpen(false)}
             >
               Book Appointment
-            </Link>
+            </Link>}
             <Link to="/track" onClick={() => setOpen(false)}>
               My Booking
             </Link>
