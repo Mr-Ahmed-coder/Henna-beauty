@@ -10,6 +10,7 @@ export function createApp({
   databaseStatus = () => "not-configured",
   queueClock,
   trustProxy = 0,
+  publicQueueEnabled = false,
 } = {}) {
   const app = express();
   app.set("trust proxy", trustProxy);
@@ -33,7 +34,7 @@ export function createApp({
   });
   app.use("/api/admin", adminRouter({ origins, queueClock }));
   app.use("/api/booking", bookingRouter({ origins }));
-  app.use("/api/queue", queueRouter({ origins, clock: queueClock }));
+  app.use("/api/queue", queueRouter({ origins, clock: queueClock, publicQueueEnabled }));
   app.use((_req, res) => res.status(404).json({ error: "Endpoint not found" }));
   app.use((err, _req, res, _next) =>
     res

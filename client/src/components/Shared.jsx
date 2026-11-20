@@ -20,9 +20,6 @@ export function VisitCTA() {
           <Link className="button light" to="/appointments">
             Book Appointment
           </Link>
-          <Link className="text-link light-text" to="/queue">
-            Join Queue
-          </Link>
         </div>
       </div>
     </section>

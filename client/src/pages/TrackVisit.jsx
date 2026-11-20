@@ -23,19 +23,19 @@ export default function TrackVisit() {
         throw new Error();
       navigate(url.pathname + url.hash);
     } catch {
-      setError("Paste the complete private link from your appointment or queue confirmation.");
+      setError("Paste the complete private link from your appointment confirmation.");
     }
   }
   return (
     <>
       <PageHeading title="My Booking">
-        Paste your private link to open an appointment or queue ticket.
+        Paste your private link to open your appointment.
       </PageHeading>
       <section className="booking-container container">
         <form className="booking-ui booking-form" onSubmit={submit}>
           {error && <div className="booking-error" role="alert">{error}</div>}
           <label>
-            Private appointment or queue link
+            Private appointment link
             <input
               type="url"
               required

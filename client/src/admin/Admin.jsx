@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "./admin.css";
 import AppointmentAdmin, { BookingConfiguration } from "./AppointmentAdmin";
-import QueueAdmin, { PolicyForm } from "./QueueAdmin";
+import QueueAdmin from "./QueueAdmin";
 import OperationsDashboard from "./OperationsDashboard";
 import BusinessReports from "./BusinessReports";
 import NotificationSettings from "./NotificationSettings";
@@ -11,11 +11,11 @@ import { money, salonDefaults } from "../localization";
 const salonSections = [
   ["services", "Services"], ["staff", "Staff"], ["schedules", "Schedules"],
   ["hours", "Business Hours"], ["booking-rules", "Booking Rules"],
-  ["queue-rules", "Queue Rules"], ["reports", "Reports"],
+  ["reports", "Reports"],
 ];
 const primarySections = [
   ["dashboard", "Today"], ["appointments", "Appointments"],
-  ["queue", "Queue"], ["services", "Manage Salon"],
+  ["services", "Manage Salon"],
 ];
 const days = [
   "Sunday",
@@ -324,10 +324,8 @@ export default function Admin() {
               <BusinessReports />
             ) : visiblePane === "booking-rules" && canEdit ? (
               <BookingConfiguration session={session} section="rules" />
-            ) : visiblePane === "queue-rules" && canEdit ? (
-              <PolicyForm session={session} />
             ) : visiblePane === "queue" ? (
-              <QueueAdmin key={entry || "board"} session={session} initialMode={entry || "board"} />
+              <QueueAdmin session={session} retiring onBack={() => changePane("dashboard")} />
             ) : visiblePane === "appointments" ? (
               <AppointmentAdmin key={entry || "list"} session={session} initialMode={entry || "list"} />
             ) : visiblePane === "hours" && canEdit ? (

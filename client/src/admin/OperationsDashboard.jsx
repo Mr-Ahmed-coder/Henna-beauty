@@ -15,7 +15,7 @@ export default function OperationsDashboard({ session, onOpen }) {
     <section className="operations-dashboard" aria-label="Daily operations">
       {desk && (
         <div className="booking-actions">
-          <button className="button" onClick={() => onOpen("queue", "walk-in")}>Add Walk-in</button>
+          <button className="button" onClick={() => onOpen("appointments", "create")}>Add Walk-in</button>
           <button className="button" onClick={() => onOpen("appointments", "create")}>New Booking</button>
         </div>
       )}
@@ -24,7 +24,7 @@ export default function OperationsDashboard({ session, onOpen }) {
       )}
       <div className="operations-summary">
         {[
-          ["Waiting", metrics?.waiting ?? "—"],
+          ["Checked in", metrics?.appointmentStatuses["Checked In"] ?? "—"],
           ["Today’s appointments", metrics?.appointments ?? "—"],
           ["Being served", countInService],
         ].map(([label, count]) => (
@@ -32,20 +32,14 @@ export default function OperationsDashboard({ session, onOpen }) {
         ))}
       </div>
       <div className="operations-grid">
-        <article className="operations-panel">
-          <div className="admin-section-title">
-            <h2>Active queue</h2>
-            <button onClick={() => onOpen("queue")}>Open Queue</button>
-          </div>
-          {!queue ? <p>{queueError ? "Queue unavailable." : "Loading queue…"}</p> :
-            !active.length ? <p>No active tickets.</p> :
-            active.slice(0, 5).map((ticket) => (
-              <div className="operations-row" key={ticket.reference}>
-                <span><strong>Q{String(ticket.number).padStart(3, "0")} · {ticket.customerName}</strong>{ticket.serviceName}</span>
-                <span>{ticket.status}</span>
-              </div>
-            ))}
-        </article>
+        {(queueError || active.length > 0) && (
+          <article className="operations-panel">
+            <h2>Outstanding tickets</h2>
+            <p>{queueError ? "Could not check for outstanding tickets. Please retry before retiring staff queue access." :
+              `${active.length} existing visit(s) need attention. Finish or cancel them using the original workflow.`}</p>
+            <button onClick={() => onOpen("queue")}>Manage existing tickets</button>
+          </article>
+        )}
         <article className="operations-panel">
           <div className="admin-section-title">
             <h2>Upcoming today</h2>

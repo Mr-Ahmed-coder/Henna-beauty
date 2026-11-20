@@ -29,7 +29,7 @@ test("hybrid queue integration on a real isolated replica set", async (t) => {
     .startOf("day")
     .set({ hour: 10 });
   let clock = initial;
-  let server = createApp({ queueClock: () => clock }).listen(0, "127.0.0.1");
+  let server = createApp({ publicQueueEnabled: true, queueClock: () => clock }).listen(0, "127.0.0.1");
   await new Promise((r) => server.once("listening", r));
   let base = `http://127.0.0.1:${server.address().port}`;
   t.after(async () => {
@@ -532,7 +532,7 @@ test("hybrid queue integration on a real isolated replica set", async (t) => {
       await new Promise((r) => server.close(r));
       await mongoose.disconnect();
       await mongoose.connect(mongo.getUri());
-      server = createApp({ queueClock: () => clock }).listen(0, "127.0.0.1");
+      server = createApp({ publicQueueEnabled: true, queueClock: () => clock }).listen(0, "127.0.0.1");
       await new Promise((r) => server.once("listening", r));
       base = `http://127.0.0.1:${server.address().port}`;
       const res = await privateView(saved);

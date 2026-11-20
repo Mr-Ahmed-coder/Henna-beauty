@@ -51,7 +51,7 @@ test("isolated demo setup is repeatable and supports booking, admin, and walk-in
   await new Promise((ready) => server.once("listening", ready));
   t.after(() => new Promise((closed) => server.close(closed)));
   const origin = `http://127.0.0.1:${server.address().port}`;
-  app = createApp({ origins: [origin], queueClock: () => tuesday });
+  app = createApp({ publicQueueEnabled: true, origins: [origin], queueClock: () => tuesday });
   const call = (path, method = "GET", body, auth = {}) => fetch(origin + path, {
     method,
     headers: { Origin: origin, "Content-Type": "application/json", ...auth },

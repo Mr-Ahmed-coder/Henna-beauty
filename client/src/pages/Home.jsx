@@ -15,11 +15,10 @@ export default function Home() {
             <em>naturally yours.</em>
           </h1>
           <p className="hero-description">
-            Dedicated henna artistry, beauty treatments, and personal styling for Minnesota’s Somali and local community. Book an appointment in advance or join our virtual queue for walk-ins.
+            Dedicated henna artistry, beauty treatments, and personal styling for Minnesota’s Somali and local community. Book an appointment to reserve your visit.
           </p>
           <div className="actions">
             <Link className="button" to="/appointments">Book Appointment</Link>
-            <Link className="text-link" to="/queue">Join Queue</Link>
           </div>
           <div className="hero-location-badge">
             <strong>Visit us:</strong> 2910 Pillsbury Ave #263, Minneapolis, MN ·{" "}

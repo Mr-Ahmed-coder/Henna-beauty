@@ -20,6 +20,13 @@ test("API reports health, restricts CORS and exposes no booking endpoints", asyn
   const ready = await fetch(`${url}/api/ready`);
   assert.equal(ready.status, 503);
   assert.equal((await ready.json()).bookingsReady, false);
+  const retired = await fetch(`${url}/api/queue/tickets`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  assert.equal(retired.status, 410);
+  assert.equal((await retired.json()).bookingPath, "/appointments");
   for (const route of ["appointments", "queue", "payments", "auth"])
     assert.equal(
       (await fetch(`${url}/api/${route}`, { method: "POST" })).status,

@@ -33,17 +33,16 @@ export default function Contact() {
           </article>
           <article>
             <div>
-              <h3>Appointments & Queue</h3>
-              <p>Book online in advance or join our virtual queue for walk-in availability.</p>
+              <h3>Appointments</h3>
+              <p>Book online to reserve a time with your artist.</p>
             </div>
           </article>
         </div>
         <aside className="contact-aside">
           <h2>Plan your visit</h2>
-          <p>Book ahead to reserve a dedicated time with your artist, or join the queue for today’s walk-in availability.</p>
+          <p>Book ahead to reserve a dedicated time with your artist.</p>
           <div className="actions">
             <Link className="button" to="/appointments">Book Appointment</Link>
-            <Link className="text-link" to="/queue">Join Queue</Link>
           </div>
         </aside>
       </section>

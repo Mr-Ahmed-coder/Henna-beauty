@@ -118,7 +118,7 @@ export function PolicyForm({ session }) {
     </section>
   );
 }
-export default function QueueAdmin({ session, initialMode = "board" }) {
+export default function QueueAdmin({ session, initialMode = "board", retiring = false, onBack }) {
   const [revision, setRevision] = useState(0),
     { data, error: pollError } = useQueuePolling(
       "/api/admin/queue",
@@ -188,9 +188,10 @@ export default function QueueAdmin({ session, initialMode = "board" }) {
   }
   return (
     <section>
+      {retiring && <><h2>Outstanding tickets</h2><p>Finish or cancel existing visits. Add new walk-ins in Appointments.</p><button onClick={onBack}>Back to Today</button></>}
       <div className="queue-board-tools">
         {mode !== "board" && <button onClick={() => tab("board")}>Back to queue</button>}
-        {desk && mode !== "walk-in" && (
+        {desk && !retiring && mode !== "walk-in" && (
           <button className="button" onClick={() => tab("walk-in")}>Add Walk-in</button>
         )}
       </div>

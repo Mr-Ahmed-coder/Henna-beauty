@@ -24,7 +24,7 @@ export default function Layout() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    document.title = `${pathname.startsWith("/appointments") ? pathname.endsWith("/manage") ? "My Booking" : "Book Appointment" : pathname.startsWith("/queue") ? "Queue" : { "/": "Home", "/services": "Services", "/about": "About", "/contact": "Contact", "/track": "My Booking" }[pathname] || "Page not found"} · Amallina Beauty Salon`;
+    document.title = `${pathname.startsWith("/appointments") ? pathname.endsWith("/manage") ? "My Booking" : "Book Appointment" : pathname.startsWith("/queue") ? "Book Appointment" : { "/": "Home", "/services": "Services", "/about": "About", "/contact": "Contact", "/track": "My Booking" }[pathname] || "Page not found"} · Amallina Beauty Salon`;
     main.current?.focus();
   }, [pathname]);
 
@@ -75,9 +75,6 @@ export default function Layout() {
             >
               Book Appointment
             </Link>
-            <Link to="/queue" onClick={() => setOpen(false)}>
-              Join Queue
-            </Link>
             <Link to="/track" onClick={() => setOpen(false)}>
               My Booking
             </Link>
@@ -124,7 +121,6 @@ export default function Layout() {
           <div>
             <h3>Plan your visit</h3>
             <Link to="/appointments">Book Appointment</Link>
-            <Link to="/queue">Join Queue</Link>
             <Link to="/track">My Booking</Link>
           </div>
         </div>

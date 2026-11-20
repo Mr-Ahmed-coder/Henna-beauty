@@ -16,7 +16,7 @@ import {
   callNext,
   changeTicket,
 } from "../queue/engine.js";
-export function queueRouter({ origins, clock = () => DateTime.utc() }) {
+export function queueRouter({ origins, clock = () => DateTime.utc(), publicQueueEnabled = false }) {
   const router = Router();
   router.all("/", (_req, res) =>
     res.status(404).json({ error: "Endpoint not found" }),
@@ -24,6 +24,14 @@ export function queueRouter({ origins, clock = () => DateTime.utc() }) {
   router.use((_req, res, next) => {
     res.set({ "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" });
     next();
+  });
+  // Keep existing private tickets and staff lifecycle operations available during retirement.
+  router.post("/tickets", (_req, res, next) => {
+    if (publicQueueEnabled) return next();
+    res.status(410).json({
+      error: "Online queue entry has closed. Please book an appointment.",
+      bookingPath: "/appointments",
+    });
   });
   router.use(
     rateLimit({
@@ -45,7 +53,9 @@ export function queueRouter({ origins, clock = () => DateTime.utc() }) {
   });
   router.get("/catalog", async (_req, res) => {
     await processDueNotifications();
-    res.json(await getQueueSnapshot({ now: clock() }));
+    const snapshot = await getQueueSnapshot({ now: clock() });
+    res.json({ ...snapshot, acceptingEntries: publicQueueEnabled && snapshot.acceptingEntries,
+      retired: !publicQueueEnabled });
   });
   router.post(
     "/tickets",

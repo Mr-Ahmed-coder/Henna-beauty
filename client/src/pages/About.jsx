@@ -15,7 +15,7 @@ export default function About() {
           Conveniently located at 2910 Pillsbury Ave in Minneapolis, we take pride in celebrating community beauty traditions with modern care and exceptional attention to detail.
         </p>
         <p>
-          Whether preparing for a wedding, family celebration, or routine self-care, our artists and staff are here for you. Schedule your appointment online in advance or join our daily virtual queue for walk-ins.
+          Whether preparing for a wedding, family celebration, or routine self-care, our artists and staff are here for you. Schedule your appointment online in advance.
         </p>
       </section>
       <VisitCTA />
