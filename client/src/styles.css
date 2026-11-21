@@ -1191,10 +1191,10 @@ main:focus {
   isolation: isolate;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 28px;
   padding-block: clamp(40px, 7vw, 88px);
-  text-align: center;
+  text-align: left;
 }
 .home-booking::before {
   content: "";
@@ -1202,29 +1202,30 @@ main:focus {
   z-index: -1;
   pointer-events: none;
   right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: clamp(160px, 20vw, 240px);
-  height: min(80%, 240px);
+  top: 0;
+  bottom: 0;
+  width: 50%;
   background: url("./images.jpg") center / cover no-repeat;
-  opacity: 0.16;
-  mask-image: radial-gradient(ellipse, #000 30%, transparent 72%);
+  opacity: 0.22;
+  mask-image: linear-gradient(to right, transparent, #000 25%, #000 90%, transparent);
 }
 .home-booking h1 {
+  max-width: 48%;
   margin: 0;
   font-size: clamp(2.25rem, 5vw, 4rem);
   line-height: 1.15;
   color: #1e3827;
 }
 .home-booking-button {
-  width: min(100%, 360px);
+  width: min(48%, 360px);
   min-height: 64px;
   font-size: 18px;
   padding: 18px 24px;
 }
 @media (max-width: 760px) {
-  .home-booking { gap: 24px; padding-block: 36px 48px; }
-  .home-booking::before { opacity: 0.07; width: 160px; }
+  .home-booking { align-items: center; text-align: center; gap: 24px; padding-block: 36px 48px; }
+  .home-booking h1 { max-width: 100%; }
+  .home-booking::before { opacity: 0.07; width: 55%; }
   .home-booking-button { width: 100%; }
 }
 @media (max-width: 600px) {
