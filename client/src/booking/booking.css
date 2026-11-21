@@ -345,3 +345,11 @@
     flex-direction: column;
   }
 }
+.booking-field-error {
+  color: #8a283c;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+.booking-form [aria-invalid="true"] {
+  border-color: #8a283c;
+}

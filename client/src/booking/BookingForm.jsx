@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
+import { customerErrors } from "../../../shared/customer-validation.mjs";
 import { bookingApi, formatTime, serviceUnavailableReason } from "./api";
 import "./booking.css";
 import { slotTime } from "../localization";
@@ -17,7 +18,7 @@ export default function BookingForm({
     [start, setStart] = useState(""),
     [customer, setCustomer] = useState({
       customerName: "",
-      phone: "+1 ",
+      phone: "",
       notes: "",
     }),
     [inAppUpdates, setInAppUpdates] = useState(true),
@@ -26,6 +27,20 @@ export default function BookingForm({
     [busy, setBusy] = useState(false),
     [review, setReview] = useState(false),
     [refresh, setRefresh] = useState(0);
+  const detailsId = useId();
+  const [touched, setTouched] = useState({});
+  const [serverFields, setServerFields] = useState({});
+  const validation = customerErrors(customer);
+  const fieldError = (key) => serverFields[key] || (touched[key] ? validation[key] : "");
+  function changeCustomer(key, value) {
+    setCustomer((previous) => ({ ...previous, [key]: value }));
+    setServerFields((previous) => ({ ...previous, [key]: undefined }));
+  }
+  function validateDetails() {
+    if (reservation) return true;
+    setTouched({ customerName: true, phone: true, notes: true });
+    return !Object.keys(validation).length && !Object.values(serverFields).some(Boolean);
+  }
   useEffect(() => {
     const controller = new AbortController();
     bookingApi("/api/booking/catalog", { signal: controller.signal })
@@ -72,6 +87,11 @@ export default function BookingForm({
     setLoading(Boolean(event.target.value && service));
   }
   async function submit() {
+    if (busy) return;
+    if (!validateDetails()) {
+      setReview(false);
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -111,12 +131,18 @@ export default function BookingForm({
         );
       onBooked(result);
     } catch (err) {
-      setError(err.message);
+      if (err.fieldErrors && Object.keys(err.fieldErrors).length) {
+        setServerFields(err.fieldErrors);
+      } else {
+        setError(err.message);
+      }
       setReview(false);
-      setStart("");
-      setSlots([]);
-      setLoading(true);
-      setRefresh((n) => n + 1);
+      if (err.status === 409) {
+        setStart("");
+        setSlots([]);
+        setLoading(true);
+        setRefresh((n) => n + 1);
+      }
     } finally {
       setBusy(false);
     }
@@ -197,9 +223,10 @@ export default function BookingForm({
           ) : (
             <form
               className="booking-form"
+              noValidate
               onSubmit={(event) => {
                 event.preventDefault();
-                if (!start) return;
+                if (!validateDetails() || !start) return;
                 setReview(true);
               }}
             >
@@ -313,15 +340,15 @@ export default function BookingForm({
                     <input
                       required
                       autoComplete="name"
+                      aria-label="Your name"
                       maxLength={120}
                       value={customer.customerName}
-                      onChange={(e) =>
-                        setCustomer({
-                          ...customer,
-                          customerName: e.target.value,
-                        })
-                      }
+                      aria-invalid={Boolean(fieldError("customerName"))}
+                      aria-describedby={fieldError("customerName") ? detailsId + "-name-error" : undefined}
+                      onBlur={() => setTouched((previous) => ({ ...previous, customerName: true }))}
+                      onChange={(e) => changeCustomer("customerName", e.target.value)}
                     />
+                    {fieldError("customerName") && <span className="booking-field-error" id={detailsId + "-name-error"}>{fieldError("customerName")}</span>}
                   </label>
                   <label>
                     Phone number
@@ -330,23 +357,29 @@ export default function BookingForm({
                       type="tel"
                       placeholder="+1 (612) 800-4944"
                       autoComplete="tel"
-                      maxLength={25}
+                      aria-label="Phone number"
+                      maxLength={64}
                       value={customer.phone}
-                      onChange={(e) =>
-                        setCustomer({ ...customer, phone: e.target.value })
-                      }
+                      aria-invalid={Boolean(fieldError("phone"))}
+                      aria-describedby={fieldError("phone") ? detailsId + "-phone-error" : undefined}
+                      onBlur={() => setTouched((previous) => ({ ...previous, phone: true }))}
+                      onChange={(e) => changeCustomer("phone", e.target.value)}
                     />
+                    {fieldError("phone") && <span className="booking-field-error" id={detailsId + "-phone-error"}>{fieldError("phone")}</span>}
                   </label>
                   <label>
                     Notes (optional)
                     <textarea
+                      aria-label="Notes (optional)"
                       maxLength={1000}
                       rows={3}
                       value={customer.notes}
-                      onChange={(e) =>
-                        setCustomer({ ...customer, notes: e.target.value })
-                      }
+                      aria-invalid={Boolean(fieldError("notes"))}
+                      aria-describedby={fieldError("notes") ? detailsId + "-notes-error" : undefined}
+                      onBlur={() => setTouched((previous) => ({ ...previous, notes: true }))}
+                      onChange={(e) => changeCustomer("notes", e.target.value)}
                     />
+                    {fieldError("notes") && <span className="booking-field-error" id={detailsId + "-notes-error"}>{fieldError("notes")}</span>}
                   </label>
                   <p className="booking-note">
                     Use +1 for US numbers or another international country code. The example isn’t a salon contact. Only authorized staff and anyone with your private link can view your details. Please leave sensitive information out of notes.

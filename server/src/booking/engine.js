@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { DateTime } from "luxon";
+import { customerErrors } from "../../../shared/customer-validation.mjs";
 import { randomBytes } from "node:crypto";
 import { Staff, Service, Schedule, ScheduleException, Settings } from "../models/index.js";
 import {
@@ -239,23 +240,14 @@ export async function availability(
 }
 export function customerData(body) {
   const { customerName, phone, notes = "" } = body;
-  if (
-    typeof customerName !== "string" ||
-    !customerName.trim() ||
-    customerName.trim().length > 120 ||
-    typeof phone !== "string" ||
-    !/^\+?[0-9 ()-]{7,25}$/.test(phone) ||
-    phone.replace(/\D/g, "").length < 7 ||
-    typeof notes !== "string" ||
-    notes.length > 1000
-  )
-    fail(
-      400,
-      "Enter a name, valid phone number, and notes of at most 1000 characters",
-    );
+  const fieldErrors = customerErrors(body);
+  if (Object.keys(fieldErrors).length)
+    throw Object.assign(new Error("Check your contact details."), {
+      status: 400, fieldErrors,
+    });
   return {
     customerName: customerName.trim(),
-    phone: phone.trim(),
+    phone: phone.trim().replace(/[\s().-]/g, ""),
     notes: notes.trim(),
   };
 }

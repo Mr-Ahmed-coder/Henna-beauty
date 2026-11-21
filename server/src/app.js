@@ -52,6 +52,7 @@ export function createApp({
               : 500,
       )
       .json({
+        ...(err.status === 400 && err.fieldErrors ? { fieldErrors: err.fieldErrors } : {}),
         error:
           err.code === 11000
             ? "An account or schedule with these details already exists"

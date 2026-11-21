@@ -138,8 +138,8 @@ test("appointment booking integration", async (t) => {
     artist,
     start: utc(time),
     customerName: "Customer Test",
-    phone: "+256 700 123456",
-    notes: "Test only",
+    phone: "+256.700.123456",
+    notes: "",
   });
   async function login(person) {
     const res = await api("/api/admin/auth/login", {
@@ -154,6 +154,16 @@ test("appointment booking integration", async (t) => {
     artistAuth = await login(one),
     otherAuth = await login(two);
   let saved;
+  await t.test("incomplete contact details return field errors without creating a booking", async () => {
+    const before = await Appointment.countDocuments();
+    const response = await api("/api/booking/reservations", {
+      method: "POST",
+      body: { ...body(), customerName: " ", phone: "+1 ", notes: "x".repeat(1001) },
+    });
+    assert.equal(response.status, 400);
+    assert.deepEqual(Object.keys(response.data.fieldErrors), ["customerName", "phone", "notes"]);
+    assert.equal(await Appointment.countDocuments(), before);
+  });
   await t.test("all seven Chicago weekdays, disabled days and date overrides", async () => {
     const zone = "America/Chicago";
     const sunday = DateTime.now().setZone(zone).startOf("week").plus({ days: 13 });
